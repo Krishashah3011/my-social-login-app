@@ -9,7 +9,5 @@ export function saveCode(code, data) {
 }
 
 export function getCode(code) {
-  const data = codes.get(code);
-  codes.delete(code);
-  return data;
+  return codes.get(code);
 }

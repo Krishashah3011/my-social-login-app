@@ -13,7 +13,6 @@ export async function action({ request }) {
   let client_id = params.get("client_id");
   let client_secret = params.get("client_secret");
 
-  // Fallback: check Authorization Basic header if not in body
   const authHeader = request.headers.get("authorization");
   console.log("AUTH HEADER:", authHeader);
 
@@ -23,6 +22,7 @@ export async function action({ request }) {
   if (!client_id && authHeader?.startsWith("Basic ")) {
     const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
     const [headerClientId, headerClientSecret] = decoded.split(":");
+
     client_id = headerClientId;
     client_secret = headerClientSecret;
   }
@@ -35,18 +35,44 @@ export async function action({ request }) {
     client_secret !== process.env.OIDC_CLIENT_SECRET
   ) {
     console.log("INVALID CLIENT CREDENTIALS");
-    return new Response("Invalid client credentials", { status: 401 });
+
+    return Response.json(
+      { error: "invalid_client" },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   }
 
   if (!code) {
-    return new Response("Missing authorization code", { status: 400 });
+    return Response.json(
+      { error: "invalid_request" },
+      {
+        status: 400,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   }
 
   const user = getCode(code);
+
   console.log("USER FROM CODE:", user);
 
   if (!user) {
-    return new Response("Invalid or expired code", { status: 400 });
+    return Response.json(
+      { error: "invalid_grant" },
+      {
+        status: 400,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   }
 
   const id_token = await createOIDCToken({
@@ -58,9 +84,11 @@ export async function action({ request }) {
 
   console.log("ID TOKEN CREATED");
 
-  // Decode and log the token payload so we can see exactly what claims it contains
   const [, payloadB64] = id_token.split(".");
-  const decodedPayload = JSON.parse(Buffer.from(payloadB64, "base64").toString());
+  const decodedPayload = JSON.parse(
+    Buffer.from(payloadB64, "base64").toString()
+  );
+
   console.log("DECODED ID TOKEN PAYLOAD:", decodedPayload);
 
   const responseBody = {
@@ -68,27 +96,27 @@ export async function action({ request }) {
     token_type: "Bearer",
     expires_in: 300,
     id_token,
-    scope: "openid email",
+    scope: "openid email customer-account-api:full",
   };
 
-console.log("FINAL TOKEN RESPONSE:", JSON.stringify(responseBody, null, 2));
+  console.log(
+    "FINAL TOKEN RESPONSE:",
+    JSON.stringify(responseBody, null, 2)
+  );
 
-console.log("RETURNING JSON NOW");
+  console.log("RETURNING JSON NOW");
 
-return new Response(JSON.stringify(responseBody), {
-  status: 200,
-  headers: {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-  },
-});
+  return new Response(JSON.stringify(responseBody), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
-console.log("RESPONSE HEADERS:", {
-  "content-type": "application/json",
-  "cache-control": "no-store",
-});
-
-export default function Token() {
-  return null;
+export async function loader() {
+  return new Response(null, {
+    status: 405,
+  });
 }
