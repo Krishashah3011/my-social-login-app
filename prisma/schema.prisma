@@ -65,3 +65,14 @@ model linkedUser {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model twitterUser {
+  id                 String   @id @default(cuid())
+  twitterId          String
+  name               String
+  email              String   @unique
+  profileImage       String?
+  shopifyCustomerId  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}

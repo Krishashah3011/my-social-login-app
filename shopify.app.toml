@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "5ef015cc5ac6f3a7566b824319ba99c6"
-application_url = "https://housewares-zone-spanking-upload.trycloudflare.com"
+application_url = "https://infants-easily-abilities-grown.trycloudflare.com"
 embedded = true
 name = "my-social-login-app"
 
@@ -45,7 +45,7 @@ api_version = "2026-10"
   topics = [ "app/scopes_update" ]
 
 [auth]
-redirect_urls = [ "https://housewares-zone-spanking-upload.trycloudflare.com" ]
+redirect_urls = [ "https://infants-easily-abilities-grown.trycloudflare.com" ]
 
 [build]
 automatically_update_urls_on_dev = true
