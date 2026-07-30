@@ -59,7 +59,7 @@ export async function action({ request }) {
     );
   }
 
-  const user = getCode(code);
+  const user = await getCode(code);
 
   console.log("USER FROM CODE:", user);
 

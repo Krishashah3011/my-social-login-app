@@ -9,7 +9,6 @@ export async function loader({ request }) {
   const code = url.searchParams.get("code");
   const stateData = url.searchParams.get("state");
 
-  // Build callback URL dynamically from the incoming request — must match what authorize.jsx sent
   const host = request.headers.get("x-forwarded-host") || url.host;
   const callbackUrl = `https://${host}/google/callback`;
 
@@ -17,23 +16,29 @@ export async function loader({ request }) {
     return new Response("No authorization code received", { status: 400 });
   }
 
-  // Recover Shopify state + redirect URI
+  if (!stateData) {
+    return new Response("Missing state", { status: 400 });
+  }
+
   const [state, redirect_uri, nonce] = stateData.split("|");
 
   // Exchange Google code for token
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      code,
-      grant_type: "authorization_code",
-      redirect_uri: callbackUrl,
-    }),
-  });
+  const tokenResponse = await fetch(
+    "https://oauth2.googleapis.com/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: callbackUrl,
+      }),
+    }
+  );
 
   const tokens = await tokenResponse.json();
 
@@ -41,15 +46,20 @@ export async function loader({ request }) {
 
   if (!tokens.access_token) {
     console.log("GOOGLE TOKEN ERROR:", tokens);
-    return new Response("Google token exchange failed", { status: 400 });
+    return new Response("Google token exchange failed", {
+      status: 400,
+    });
   }
 
   // Get Google user
-  const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-    headers: {
-      Authorization: `Bearer ${tokens.access_token}`,
-    },
-  });
+  const userResponse = await fetch(
+    "https://www.googleapis.com/oauth2/v2/userinfo",
+    {
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+      },
+    }
+  );
 
   const googleUser = await userResponse.json();
 
@@ -85,11 +95,18 @@ export async function loader({ request }) {
   );
 
   const existingData = await existingCustomerResponse.json();
-  const existingCustomer = existingData.data?.customers?.edges[0]?.node;
+
+  const existingCustomer =
+    existingData.data?.customers?.edges[0]?.node;
 
   if (existingCustomer) {
     shopifyCustomerId = existingCustomer.id;
-    console.log("Existing customer:", shopifyCustomerId);
+
+    console.log(
+      "Existing customer:",
+      shopifyCustomerId
+    );
+
   } else {
     const customerResponse = await admin.graphql(
       `#graphql
@@ -117,13 +134,50 @@ export async function loader({ request }) {
     );
 
     const result = await customerResponse.json();
+
     console.log("Created customer:", result);
-    shopifyCustomerId = result.data.customerCreate.customer?.id;
+
+    const customerCreateResult =
+      result.data?.customerCreate;
+
+    if (!customerCreateResult) {
+      console.log(
+        "CUSTOMER CREATE RESPONSE ERROR:",
+        result
+      );
+
+      return new Response(
+        "Customer creation failed",
+        { status: 400 }
+      );
+    }
+
+    if (customerCreateResult.userErrors.length > 0) {
+      console.log(
+        "CUSTOMER CREATE USER ERRORS:",
+        customerCreateResult.userErrors
+      );
+
+      return new Response(
+        "Customer creation failed",
+        { status: 400 }
+      );
+    }
+
+    shopifyCustomerId =
+      customerCreateResult.customer?.id;
+
+    console.log(
+      "NEW SHOPIFY CUSTOMER ID:",
+      shopifyCustomerId
+    );
   }
 
   // Save user in Prisma
   const user = await prisma.googleUser.upsert({
-    where: { email: googleUser.email },
+    where: {
+      email: googleUser.email,
+    },
     update: {
       name: googleUser.name,
       profileImage: googleUser.picture,
@@ -140,25 +194,36 @@ export async function loader({ request }) {
 
   console.log("DATABASE USER:", user);
 
-  // Create temporary authorization code
+  // Temporary authorization code
   const authCode = crypto.randomUUID();
 
-  saveCode(authCode, {
+  await saveCode(authCode, {
     email: user.email,
     name: user.name,
     id: user.id,
     nonce,
   });
 
-  console.log("AUTH CODE CREATED:", authCode);
+  console.log(
+    "AUTH CODE CREATED:",
+    authCode
+  );
 
   if (!redirect_uri) {
-    return new Response("Missing redirect_uri", { status: 400 });
+    return new Response(
+      "Missing redirect_uri",
+      { status: 400 }
+    );
   }
 
-  console.log("REDIRECTING TO SHOPIFY:", redirect_uri);
+  console.log(
+    "REDIRECTING TO SHOPIFY:",
+    redirect_uri
+  );
 
-  return redirect(`${redirect_uri}?code=${authCode}&state=${state}`);
+  return redirect(
+    `${redirect_uri}?code=${authCode}&state=${state}`
+  );
 }
 
 export default function GoogleCallback() {
