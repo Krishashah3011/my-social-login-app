@@ -17,8 +17,8 @@ export async function createOIDCToken(user) {
       kid: "shopify-login-key",
       typ: "JWT",
     })
-    .setIssuer("https://infants-easily-abilities-grown.trycloudflare.com")
-    .setAudience(process.env.OIDC_CLIENT_ID)
+    .setIssuer(process.env.OIDC_ISSUER)
+    .setAudience(user.client_id)
     .setSubject(user.id.toString())
     .setIssuedAt()
     .setExpirationTime("5m")

@@ -80,6 +80,7 @@ export async function action({ request }) {
     name: user.name,
     id: user.id,
     nonce: user.nonce,
+    client_id: client_id,
   });
 
   console.log("ID TOKEN CREATED");
