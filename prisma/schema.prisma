@@ -76,3 +76,49 @@ model twitterUser {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
+
+model facebookUser {
+  id                 String   @id @default(cuid())
+  facebookId         String
+  name               String
+  email              String   @unique
+  profileImage       String?
+  shopifyCustomerId  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model amazonUser {
+  id                String   @id @default(cuid())
+  amazonId          String
+  name              String
+  email             String   @unique
+  shopifyCustomerId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ShopSettings {
+  id              String   @id @default(cuid())
+  shop            String   @unique
+  googleEnabled   Boolean  @default(true)
+  twitterEnabled  Boolean  @default(true)
+  facebookEnabled Boolean  @default(true)
+  linkedinEnabled Boolean  @default(true)
+  amazonEnabled   Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EmailOtp {
+  id          String   @id @default(cuid())
+  email       String
+  code        String
+  state       String
+  redirectUri String
+  nonce       String
+  attempts    Int      @default(0)
+  consumed    Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}

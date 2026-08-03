@@ -4,7 +4,7 @@ import { getKeys } from "./keys.server";
 export async function createOIDCToken(user) {
   const { privateKey } = await getKeys();
 
-  console.log("RUNTIME OIDC_ISSUER:", process.env.OIDC_ISSUER);
+  console.log("RUNTIME OIDC_ISSUER:", user.issuer);
 
   const token = await new SignJWT({
     email: user.email,
@@ -17,7 +17,7 @@ export async function createOIDCToken(user) {
       kid: "shopify-login-key",
       typ: "JWT",
     })
-    .setIssuer(process.env.OIDC_ISSUER)
+    .setIssuer(user.issuer)
     .setAudience(user.client_id)
     .setSubject(user.id.toString())
     .setIssuedAt()

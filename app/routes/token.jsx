@@ -4,6 +4,11 @@ import { createOIDCToken } from "../utils/oidc.server";
 export async function action({ request }) {
   console.log("TOKEN ENDPOINT HIT");
 
+  const url = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") || url.host;
+  const issuer = `https://${host}`;
+  console.log("COMPUTED ISSUER:", issuer);
+
   const body = await request.text();
   console.log("TOKEN BODY:", body);
 
@@ -81,6 +86,7 @@ export async function action({ request }) {
     id: user.id,
     nonce: user.nonce,
     client_id: client_id,
+    issuer,
   });
 
   console.log("ID TOKEN CREATED");
