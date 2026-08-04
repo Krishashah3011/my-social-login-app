@@ -106,6 +106,8 @@ model ShopSettings {
   facebookEnabled Boolean  @default(true)
   linkedinEnabled Boolean  @default(true)
   amazonEnabled   Boolean  @default(true)
+  username        String?
+  accountEmail    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
