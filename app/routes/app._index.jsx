@@ -3,6 +3,19 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
@@ -43,7 +56,87 @@ export const loader = async ({ request }) => {
   const completedCount = steps.filter((s) => s.done).length;
   const percentComplete = Math.round((completedCount / steps.length) * 100);
 
-  return { settings, providerList, enabledCount, steps, percentComplete };
+  // --- Analytics: totals per provider ---
+  const [
+    googleUsers,
+    linkedUsers,
+    facebookUsers,
+    twitterUsers,
+    amazonUsers,
+    emailVerified,
+  ] = await Promise.all([
+    db.googleUser.findMany({ select: { createdAt: true } }),
+    db.linkedUser.findMany({ select: { createdAt: true } }),
+    db.facebookUser.findMany({ select: { createdAt: true } }),
+    db.twitterUser.findMany({ select: { createdAt: true } }),
+    db.amazonUser.findMany({ select: { createdAt: true } }),
+    db.emailOtp.findMany({
+      where: { consumed: true },
+      select: { createdAt: true },
+    }),
+  ]);
+
+  const totalsByProvider = [
+    { name: "Google", count: googleUsers.length, color: "#4285F4" },
+    { name: "LinkedIn", count: linkedUsers.length, color: "#0A66C2" },
+    { name: "Facebook", count: facebookUsers.length, color: "#1877F2" },
+    { name: "X", count: twitterUsers.length, color: "#000000" },
+    { name: "Amazon", count: amazonUsers.length, color: "#FF9900" },
+    { name: "Email", count: emailVerified.length, color: "#1a2b4c" },
+  ];
+
+  const totalLogins = totalsByProvider.reduce((sum, p) => sum + p.count, 0);
+
+  // --- Analytics: last 7 days trend ---
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10)); // "YYYY-MM-DD"
+  }
+
+  const dayLabel = (isoDate) => {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const countByDay = (records) => {
+    const map = {};
+    for (const day of days) map[day] = 0;
+    for (const r of records) {
+      const day = r.createdAt.toISOString().slice(0, 10);
+      if (day in map) map[day] += 1;
+    }
+    return map;
+  };
+
+  const googleByDay = countByDay(googleUsers);
+  const linkedByDay = countByDay(linkedUsers);
+  const facebookByDay = countByDay(facebookUsers);
+  const twitterByDay = countByDay(twitterUsers);
+  const amazonByDay = countByDay(amazonUsers);
+  const emailByDay = countByDay(emailVerified);
+
+  const trend = days.map((day) => ({
+    date: dayLabel(day),
+    Google: googleByDay[day],
+    LinkedIn: linkedByDay[day],
+    Facebook: facebookByDay[day],
+    X: twitterByDay[day],
+    Amazon: amazonByDay[day],
+    Email: emailByDay[day],
+  }));
+
+  return {
+    settings,
+    providerList,
+    enabledCount,
+    steps,
+    percentComplete,
+    totalsByProvider,
+    totalLogins,
+    trend,
+  };
 };
 
 function GoogleIcon() {
@@ -56,7 +149,6 @@ function GoogleIcon() {
     </svg>
   );
 }
-
 function LinkedInIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24">
@@ -65,7 +157,6 @@ function LinkedInIcon() {
     </svg>
   );
 }
-
 function FacebookIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24">
@@ -74,7 +165,6 @@ function FacebookIcon() {
     </svg>
   );
 }
-
 function XIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24">
@@ -83,7 +173,6 @@ function XIcon() {
     </svg>
   );
 }
-
 function AmazonIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24">
@@ -103,6 +192,14 @@ const ICONS = {
 };
 
 const NAVY = "#1a2b4c";
+const LINE_COLORS = {
+  Google: "#4285F4",
+  LinkedIn: "#0A66C2",
+  Facebook: "#1877F2",
+  X: "#000000",
+  Amazon: "#FF9900",
+  Email: "#1a2b4c",
+};
 
 const styles = {
   statsRow: {
@@ -134,6 +231,7 @@ const styles = {
     fontWeight: 600,
     fontSize: "14px",
   },
+  chartPad: { padding: "20px" },
   progressWrap: { padding: "18px 20px" },
   progressBarTrack: {
     width: "100%",
@@ -241,8 +339,16 @@ function ProviderStatusRow({ label, enabled }) {
 }
 
 export default function Index() {
-  const { settings, providerList, enabledCount, steps, percentComplete } =
-    useLoaderData();
+  const {
+    settings,
+    providerList,
+    enabledCount,
+    steps,
+    percentComplete,
+    totalsByProvider,
+    totalLogins,
+    trend,
+  } = useLoaderData();
 
   return (
     <s-page heading="Social Login">
@@ -269,6 +375,7 @@ export default function Index() {
             label="Setup Complete"
             accent={percentComplete === 100 ? "#2f8f4e" : "#e0a11c"}
           />
+          <StatCard value={totalLogins} label="Total Logins" accent="#6b46c1" />
         </div>
 
         <div style={styles.card}>
@@ -288,6 +395,50 @@ export default function Index() {
           {steps.map((step, i) => (
             <StepCard key={step.id} number={i + 1} step={step} />
           ))}
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>Logins by Provider</div>
+          <div style={styles.chartPad}>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={totalsByProvider}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {totalsByProvider.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>Logins — Last 7 Days</div>
+          <div style={styles.chartPad}>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={trend}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: "12px" }} />
+                {Object.keys(LINE_COLORS).map((key) => (
+                  <Line
+                    key={key}
+                    type="monotone"
+                    dataKey={key}
+                    stroke={LINE_COLORS[key]}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div style={styles.card}>
