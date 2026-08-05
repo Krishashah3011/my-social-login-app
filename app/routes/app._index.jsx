@@ -1,9 +1,22 @@
-import { useState } from "react";
 import { useLoaderData, Link } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
+
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Cell,
+} from "recharts";
 
 export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
@@ -30,9 +43,9 @@ export const loader = async ({ request }) => {
   const enabledCount = providerList.filter((p) => settings[p.key]).length;
   const allProvidersEnabled = enabledCount === totalProviders;
 
-  // Progress bar reflects actual proportion of enabled providers —
-  // disabling one brings this back down, enabling one brings it up.
-  const percentComplete = Math.round((enabledCount / totalProviders) * 100);
+  const percentComplete = Math.round(
+    (enabledCount / totalProviders) * 100,
+  );
 
   const steps = [
     {
@@ -46,75 +59,157 @@ export const loader = async ({ request }) => {
     },
   ];
 
-  return { settings, steps, percentComplete };
-};
+  // -----------------------------
+  // Analytics Data
+  // -----------------------------
 
+  const [
+    googleUsers,
+    linkedUsers,
+    facebookUsers,
+    twitterUsers,
+    amazonUsers,
+    emailVerified,
+  ] = await Promise.all([
+    db.googleUser.findMany({
+      select: { createdAt: true },
+    }),
+    db.linkedUser.findMany({
+      select: { createdAt: true },
+    }),
+    db.facebookUser.findMany({
+      select: { createdAt: true },
+    }),
+    db.twitterUser.findMany({
+      select: { createdAt: true },
+    }),
+    db.amazonUser.findMany({
+      select: { createdAt: true },
+    }),
+    db.emailOtp.findMany({
+      where: { consumed: true },
+      select: { createdAt: true },
+    }),
+  ]);
+
+  const totalsByProvider = [
+    {
+      name: "Google",
+      count: googleUsers.length,
+      color: "#073E74",
+    },
+    {
+      name: "LinkedIn",
+      count: linkedUsers.length,
+      color: "#1C5A94",
+    },
+    {
+      name: "Facebook",
+      count: facebookUsers.length,
+      color: "#2E73B8",
+    },
+    {
+      name: "X",
+      count: twitterUsers.length,
+      color: "#4D90D6",
+    },
+    {
+      name: "Amazon",
+      count: amazonUsers.length,
+      color: "#7BAFE5",
+    },
+    {
+      name: "Email",
+      count: emailVerified.length,
+      color: "#96BF47",
+    },
+  ];
+
+  const days = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+
+  const dayLabel = (isoDate) => {
+    const d = new Date(isoDate);
+
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const countByDay = (records) => {
+    const map = {};
+
+    for (const day of days) {
+      map[day] = 0;
+    }
+
+    for (const r of records) {
+      const day = r.createdAt.toISOString().slice(0, 10);
+
+      if (day in map) {
+        map[day]++;
+      }
+    }
+
+    return map;
+  };
+
+  const googleByDay = countByDay(googleUsers);
+  const linkedByDay = countByDay(linkedUsers);
+  const facebookByDay = countByDay(facebookUsers);
+  const twitterByDay = countByDay(twitterUsers);
+  const amazonByDay = countByDay(amazonUsers);
+  const emailByDay = countByDay(emailVerified);
+
+  const trend = days.map((day) => ({
+    date: dayLabel(day),
+    Google: googleByDay[day],
+    LinkedIn: linkedByDay[day],
+    Facebook: facebookByDay[day],
+    X: twitterByDay[day],
+    Amazon: amazonByDay[day],
+    Email: emailByDay[day],
+  }));
+
+  return {
+    settings,
+    steps,
+    percentComplete,
+    totalsByProvider,
+    trend,
+  };
+};
 // ---- design tokens pulled directly from the Figma CSS export ----
 const BLUE = "#073E74";
-const GREEN = "#96BF47";
 const BORDER = "#E5E5E5";
 const DIVIDER = "#DBDBDB";
-const ALERT_BG = "#D8ECFF";
 const TEXT_BLACK = "#000000";
-const TEXT_GUIDE = "#424242";
 const TEXT_MUTED = "#373737";
 
-function InfoBadgeIcon() {
-  return (
-    <div
-      style={{
-        width: "24px",
-        height: "24px",
-        background: GREEN,
-        borderRadius: "4px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      <svg width="7" height="14" viewBox="0 0 7 14" fill="none">
-        <rect x="2.2" y="4.5" width="2.6" height="9" rx="1.3" fill="#fff" />
-        <circle cx="3.5" cy="1.6" r="1.6" fill="#fff" />
-      </svg>
-    </div>
-  );
-}
+// Chart colors (matched with current UI)
+const BAR_COLORS = [
+  "#073E74",
+  "#0D4D8C",
+  "#1C5A94",
+  "#2D6FA9",
+  "#5E95C9",
+  "#96BF47",
+];
 
-function Chevron({ open }) {
-  return (
-    <svg
-      width="16"
-      height="8.53"
-      viewBox="0 0 16 9"
-      fill="none"
-      style={{
-        transform: open ? "rotate(180deg)" : "rotate(0deg)",
-        transition: "transform 0.2s ease",
-        flexShrink: 0,
-      }}
-    >
-      <path
-        d="M1 1L8 8L15 1"
-        stroke={BLUE}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
-  );
-}
-
-function AlertIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: "1px" }}>
-      <circle cx="8" cy="8" r="7" stroke={BLUE} strokeWidth="1.4" />
-      <rect x="7.25" y="7" width="1.5" height="4.8" rx="0.75" fill={BLUE} />
-      <circle cx="8" cy="4.6" r="0.95" fill={BLUE} />
-    </svg>
-  );
-}
+const LINE_COLORS = {
+  Google: "#073E74",
+  LinkedIn: "#0D4D8C",
+  Facebook: "#1C5A94",
+  X: "#2D6FA9",
+  Amazon: "#5E95C9",
+  Email: "#96BF47",
+};
 
 const styles = {
   hero: {
@@ -132,6 +227,7 @@ const styles = {
     marginBottom: "16px",
     textAlign: "center",
   },
+
   heroTitle: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 800,
@@ -140,6 +236,7 @@ const styles = {
     color: "#FFFFFF",
     margin: 0,
   },
+
   heroSubtitle: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 500,
@@ -148,6 +245,7 @@ const styles = {
     color: "#FFFFFF",
     margin: 0,
   },
+
   card: {
     background: "#FFFFFF",
     border: `1px solid ${BORDER}`,
@@ -158,70 +256,8 @@ const styles = {
     gap: "16px",
     marginBottom: "16px",
   },
-  guideHeaderRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    cursor: "pointer",
-  },
-  guideHeaderLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  guideText: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 500,
-    fontSize: "16px",
-    lineHeight: "19px",
-    letterSpacing: "0.02em",
-    color: TEXT_GUIDE,
-  },
-  alertBox: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px",
-    background: ALERT_BG,
-    borderRadius: "10px",
-    gap: "16px",
-    flexWrap: "wrap",
-  },
-  alertLeft: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "8px",
-  },
-  alertTitle: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 500,
-    fontSize: "16px",
-    lineHeight: "19px",
-    color: BLUE,
-    margin: 0,
-  },
-  alertBody: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 400,
-    fontSize: "14px",
-    lineHeight: "17px",
-    color: BLUE,
-    margin: 0,
-  },
-  alertButton: {
-    padding: "10px",
-    background: BLUE,
-    borderRadius: "10px",
-    color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 600,
-    fontSize: "14px",
-    lineHeight: "17px",
-    border: "none",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-  sectionHeading: {
+
+    sectionHeading: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 600,
     fontSize: "18px",
@@ -230,12 +266,14 @@ const styles = {
     color: TEXT_BLACK,
     margin: 0,
   },
+
   divider: {
     border: "none",
     borderTop: `1px solid ${DIVIDER}`,
     margin: 0,
     width: "100%",
   },
+
   progressLabel: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 500,
@@ -244,6 +282,7 @@ const styles = {
     color: TEXT_BLACK,
     marginBottom: "4px",
   },
+
   progressTrack: {
     width: "100%",
     height: "6px",
@@ -251,6 +290,7 @@ const styles = {
     background: DIVIDER,
     overflow: "hidden",
   },
+
   progressFill: (percent) => ({
     width: `${percent}%`,
     height: "100%",
@@ -258,6 +298,7 @@ const styles = {
     background: BLUE,
     transition: "width 0.3s ease",
   }),
+
   stepRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -265,6 +306,7 @@ const styles = {
     gap: "16px",
     flexWrap: "wrap",
   },
+
   stepTitle: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 500,
@@ -273,6 +315,7 @@ const styles = {
     color: TEXT_BLACK,
     margin: 0,
   },
+
   stepDescription: {
     fontFamily: "Inter, sans-serif",
     fontWeight: 400,
@@ -282,6 +325,7 @@ const styles = {
     margin: "4px 0 0",
     maxWidth: "606px",
   },
+
   stepButton: {
     padding: "10px",
     background: BLUE,
@@ -295,6 +339,7 @@ const styles = {
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
+
   stepDonePill: {
     padding: "8px 14px",
     background: "#E3F4E9",
@@ -304,82 +349,229 @@ const styles = {
     fontWeight: 600,
     fontSize: "14px",
   },
+
+  chartContainer: {
+    width: "100%",
+    height: "320px",
+    marginTop: "16px",
+  },
 };
 
 export default function Index() {
-  const { steps, percentComplete } = useLoaderData();
-  const [guideOpen, setGuideOpen] = useState(false);
+  const {
+    steps,
+    percentComplete,
+    totalsByProvider,
+    trend,
+  } = useLoaderData();
 
   return (
     <s-page heading="Social Login App">
       <TopIconNav active="home" />
 
+      {/* Hero */}
       <div style={styles.hero}>
-        <h1 style={styles.heroTitle}>Welcome to Social Login App!</h1>
-        <p style={styles.heroSubtitle}>Simplify Customer Login with My Social Login App!</p>
+        <h1 style={styles.heroTitle}>
+          Welcome to Social Login App!
+        </h1>
+
+        <p style={styles.heroSubtitle}>
+          Simplify Customer Login with My Social Login App!
+        </p>
       </div>
 
-      {/* User Guide + Action Required card */}
+      {/* Setup Progress */}
       <div style={styles.card}>
-        <div style={styles.guideHeaderRow} onClick={() => setGuideOpen((o) => !o)}>
-          <div style={styles.guideHeaderLeft}>
-            <InfoBadgeIcon />
-            <span style={styles.guideText}>
-              User Guide: Get Started with Social Login App
-            </span>
-          </div>
-          <Chevron open={guideOpen} />
-        </div>
+        <h2 style={styles.sectionHeading}>
+          Your Setup Progress
+        </h2>
 
-        {guideOpen && (
-          <div style={styles.alertBox}>
-            <div style={styles.alertLeft}>
-              <AlertIcon />
-              <div>
-                <p style={styles.alertTitle}>
-                  Action Required: Review blocks are missing from your product page.
-                </p>
-                <p style={styles.alertBody}>Please add them by clicking the button.</p>
-              </div>
-            </div>
-            <button style={styles.alertButton}>Add Review Slider Block</button>
-          </div>
-        )}
-      </div>
-
-      {/* Setup Progress card */}
-      <div style={styles.card}>
-        <h2 style={styles.sectionHeading}>Your Setup Progress</h2>
         <hr style={styles.divider} />
+
         <div>
-          <div style={styles.progressLabel}>{percentComplete}% Complete</div>
+          <div style={styles.progressLabel}>
+            {percentComplete}% Complete
+          </div>
+
           <div style={styles.progressTrack}>
-            <div style={styles.progressFill(percentComplete)} />
+            <div
+              style={styles.progressFill(percentComplete)}
+            />
           </div>
         </div>
       </div>
 
-      {/* Required Setup Steps card */}
+      {/* Required Setup Steps */}
       <div style={styles.card}>
-        <h2 style={styles.sectionHeading}>Required Setup Steps</h2>
+        <h2 style={styles.sectionHeading}>
+          Required Setup Steps
+        </h2>
+
         <hr style={styles.divider} />
+
         {steps.map((step) => (
-          <div key={step.id} style={styles.stepRow}>
+          <div
+            key={step.id}
+            style={styles.stepRow}
+          >
             <div>
-              <p style={styles.stepTitle}>{step.title}</p>
-              <p style={styles.stepDescription}>{step.description}</p>
+              <p style={styles.stepTitle}>
+                {step.title}
+              </p>
+
+              <p style={styles.stepDescription}>
+                {step.description}
+              </p>
             </div>
+
             {step.done ? (
-              <span style={styles.stepDonePill}>{step.actionLabel}</span>
+              <span style={styles.stepDonePill}>
+                {step.actionLabel}
+              </span>
             ) : (
-              <Link to={step.actionHref} style={{ textDecoration: "none" }}>
-                <button style={styles.stepButton}>{step.actionLabel}</button>
+              <Link
+                to={step.actionHref}
+                style={{ textDecoration: "none" }}
+              >
+                <button style={styles.stepButton}>
+                  {step.actionLabel}
+                </button>
               </Link>
             )}
           </div>
         ))}
       </div>
-    </s-page>
+
+      {/* =======================
+          Logins by Provider
+      ======================== */}
+
+            <div style={styles.card}>
+        <h2 style={styles.sectionHeading}>
+          Logins by Provider
+        </h2>
+
+        <hr style={styles.divider} />
+
+        <div style={styles.chartContainer}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={totalsByProvider}
+              margin={{
+                top: 10,
+                right: 20,
+                left: 0,
+                bottom: 0,
+              }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#E8E8E8"
+              />
+
+              <XAxis
+                dataKey="name"
+                tick={{
+                  fontSize: 12,
+                  fill: "#424242",
+                }}
+              />
+
+              <YAxis
+                allowDecimals={false}
+                tick={{
+                  fontSize: 12,
+                  fill: "#424242",
+                }}
+              />
+
+              <Tooltip />
+
+              <Bar
+                dataKey="count"
+                radius={[6, 6, 0, 0]}
+              >
+                {totalsByProvider.map((entry, index) => (
+                  <Cell
+                    key={index}
+                    fill={BAR_COLORS[index]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* =======================
+          Logins in Last 7 Days
+      ======================== */}
+
+            <div style={styles.card}>
+        <h2 style={styles.sectionHeading}>
+          Logins in Last 7 Days
+        </h2>
+
+        <hr style={styles.divider} />
+
+        <div style={styles.chartContainer}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={trend}
+              margin={{
+                top: 10,
+                right: 20,
+                left: 0,
+                bottom: 0,
+              }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#E8E8E8"
+              />
+
+              <XAxis
+                dataKey="date"
+                tick={{
+                  fontSize: 12,
+                  fill: "#424242",
+                }}
+              />
+
+              <YAxis
+                allowDecimals={false}
+                tick={{
+                  fontSize: 12,
+                  fill: "#424242",
+                }}
+              />
+
+              <Tooltip />
+
+              <Legend
+                wrapperStyle={{
+                  fontSize: "12px",
+                }}
+              />
+
+              {Object.keys(LINE_COLORS).map((provider) => (
+                <Line
+                  key={provider}
+                  type="monotone"
+                  dataKey={provider}
+                  stroke={LINE_COLORS[provider]}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 6 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+          </s-page>
   );
 }
 
