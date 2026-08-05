@@ -1,0 +1,23 @@
+-- RedefineTables
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_ShopSettings" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "shop" TEXT NOT NULL,
+    "googleEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "twitterEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "facebookEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "linkedinEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "amazonEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "appEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "username" TEXT,
+    "accountEmail" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+INSERT INTO "new_ShopSettings" ("accountEmail", "amazonEnabled", "createdAt", "facebookEnabled", "googleEnabled", "id", "linkedinEnabled", "shop", "twitterEnabled", "updatedAt", "username") SELECT "accountEmail", "amazonEnabled", "createdAt", "facebookEnabled", "googleEnabled", "id", "linkedinEnabled", "shop", "twitterEnabled", "updatedAt", "username" FROM "ShopSettings";
+DROP TABLE "ShopSettings";
+ALTER TABLE "new_ShopSettings" RENAME TO "ShopSettings";
+CREATE UNIQUE INDEX "ShopSettings_shop_key" ON "ShopSettings"("shop");
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;

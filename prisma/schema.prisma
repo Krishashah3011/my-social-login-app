@@ -98,20 +98,6 @@ model amazonUser {
   updatedAt         DateTime @updatedAt
 }
 
-model ShopSettings {
-  id              String   @id @default(cuid())
-  shop            String   @unique
-  googleEnabled   Boolean  @default(true)
-  twitterEnabled  Boolean  @default(true)
-  facebookEnabled Boolean  @default(true)
-  linkedinEnabled Boolean  @default(true)
-  amazonEnabled   Boolean  @default(true)
-  username        String?
-  accountEmail    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
 model EmailOtp {
   id          String   @id @default(cuid())
   email       String
@@ -123,4 +109,20 @@ model EmailOtp {
   consumed    Boolean  @default(false)
   expiresAt   DateTime
   createdAt   DateTime @default(now())
+}
+
+model ShopSettings {
+  id              String   @id @default(cuid())
+  shop            String   @unique
+  googleEnabled   Boolean  @default(true)
+  twitterEnabled  Boolean  @default(true)
+  facebookEnabled Boolean  @default(true)
+  linkedinEnabled Boolean  @default(true)
+  amazonEnabled   Boolean  @default(true)
+  appEnabled      Boolean  @default(true)
+  serialKey       String?  @unique
+  username        String?
+  accountEmail    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

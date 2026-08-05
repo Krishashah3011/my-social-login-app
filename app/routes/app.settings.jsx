@@ -6,6 +6,20 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
 
+// ---- design tokens pulled directly from the Figma CSS export ----
+const BLUE = "#073E74";
+const GRAY_OFF = "#707072";
+const BORDER = "#DBDBDB";
+const LICENSE_BG = "#EDEDED";
+const LICENSE_BORDER = "#E9E9EA";
+const TEXT_DARK = "#000000";
+const TEXT_MUTED = "#373737";
+
+function generateSerialKey() {
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `SER-${Date.now()}-${rand}`;
+}
+
 export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
 
@@ -15,7 +29,13 @@ export const loader = async ({ request }) => {
 
   if (!settings) {
     settings = await db.shopSettings.create({
-      data: { shop: session.shop },
+      data: { shop: session.shop, serialKey: generateSerialKey() },
+    });
+  } else if (!settings.serialKey) {
+    // backfill for existing shops — remove if you don't add the column
+    settings = await db.shopSettings.update({
+      where: { shop: session.shop },
+      data: { serialKey: generateSerialKey() },
     });
   }
 
@@ -29,6 +49,7 @@ export const action = async ({ request }) => {
   const updated = await db.shopSettings.update({
     where: { shop: session.shop },
     data: {
+      appEnabled: formData.get("appEnabled") === "true",
       googleEnabled: formData.get("googleEnabled") === "true",
       twitterEnabled: formData.get("twitterEnabled") === "true",
       facebookEnabled: formData.get("facebookEnabled") === "true",
@@ -40,71 +61,12 @@ export const action = async ({ request }) => {
   return { settings: updated };
 };
 
-const BLUE = "#073E74";
-
-function GoogleIcon() {
-  // Google keeps its standard white-circle badge
+function InfoIcon() {
   return (
-    <svg width="36" height="36" viewBox="0 0 36 36">
-      <circle cx="18" cy="18" r="18" fill="#fff" />
-      <g transform="translate(6,6) scale(0.9167)">
-        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.7-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z"/>
-        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1C3.4 21.4 7.4 24 12 24z"/>
-        <path fill="#FBBC05" d="M5.4 14.4c-.2-.7-.4-1.4-.4-2.4s.1-1.7.4-2.4V6.5H1.4C.5 8.2 0 10 0 12s.5 3.8 1.4 5.5l4-3.1z"/>
-        <path fill="#EA4335" d="M12 4.8c1.7 0 3.3.6 4.5 1.7l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.6 1.4 6.5l4 3.1C6.3 6.9 8.9 4.8 12 4.8z"/>
-      </g>
-    </svg>
-  );
-}
-
-function LinkedInIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="12" fill="#0A66C2" />
-      <path
-        fill="#fff"
-        d="M8.5 9.5h-2v7h2v-7zM7.5 8.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM17 12.6c0-2-1.1-2.9-2.5-2.9-1.1 0-1.6.6-1.9 1v-.9h-2v7h2v-3.9c0-.6.4-1.2 1.1-1.2s1.1.6 1.1 1.2v3.9h2v-4.2z"
-      />
-    </svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="12" fill="#1877F2" />
-      <path
-        fill="#fff"
-        d="M13.5 21v-7h2.3l.3-2.7h-2.6V9.5c0-.8.2-1.3 1.3-1.3h1.4V5.8c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.1-3.2 3.3v1.9H8.8v2.7h2.3v7h2.4z"
-      />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="12" fill="#000" />
-      <path
-        fill="#fff"
-        d="M6.5 6.5l4.2 5.6-4.4 5.4h1.3l3.8-4.7 3.1 4.7h3l-4.5-6 4.1-5h-1.3l-3.5 4.3-2.8-4.3h-3z"
-      />
-    </svg>
-  );
-}
-
-function AmazonIcon() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="12" fill="#FF9900" />
-      <path
-        fill="#fff"
-        d="M17.5 15.8c-1.8 1.3-4.3 2-6.5 2-3.1 0-5.9-1.1-8-3-.2-.2 0-.4.2-.3 2.3 1.3 5.1 2.1 8 2.1 2 0 4.1-.4 6.1-1.2.3-.1.5.2.2.4z"
-      />
-      <path
-        fill="#fff"
-        d="M13 8.7v-.4c0-.2.1-.3.3-.3h2c.2 0 .3.1.3.3v.3c0 .2-.2.4-.4.7l-1 1.5c.4 0 .8.1 1.1.3.1 0 .1.1.1.2v.4c0 .1-.1.2-.3.2-.6-.3-1.4-.4-2 0-.1.1-.2 0-.2-.2v-.4c0-.1 0-.2.1-.3l1.2-1.7h-1c-.2 0-.3-.1-.3-.3z"
-      />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="7" stroke={BLUE} strokeWidth="1.2" />
+      <rect x="7.3" y="6.5" width="1.4" height="4.5" rx="0.7" fill={BLUE} />
+      <circle cx="8" cy="4.6" r="0.9" fill={BLUE} />
     </svg>
   );
 }
@@ -120,11 +82,11 @@ function ToggleSwitch({ checked, onChange, disabled }) {
       style={{
         width: "46px",
         height: "24px",
-        borderRadius: "12px",
+        borderRadius: "110px",
         border: "none",
         padding: 0,
         position: "relative",
-        background: checked ? BLUE : "#707072",
+        background: checked ? BLUE : GRAY_OFF,
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
         transition: "background 0.15s ease",
@@ -134,7 +96,7 @@ function ToggleSwitch({ checked, onChange, disabled }) {
       <span
         style={{
           position: "absolute",
-          top: "4px",
+          top: "3.5px",
           left: checked ? "25px" : "4px",
           width: "17px",
           height: "17px",
@@ -148,85 +110,141 @@ function ToggleSwitch({ checked, onChange, disabled }) {
 }
 
 const styles = {
+  outerCard: {
+    border: `1px solid ${BORDER}`,
+    borderRadius: "8px",
+    background: "#fff",
+    padding: "16px",
+  },
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: "16px",
   },
-  heading: { fontSize: "20px", fontWeight: 700, margin: 0 },
-  saveButton: (disabled) => ({
-    padding: "10px 22px",
-    borderRadius: "8px",
-    fontSize: "14px",
+  heading: {
+    fontFamily: "Inter, sans-serif",
     fontWeight: 600,
-    color: "#fff",
-    cursor: disabled ? "default" : "pointer",
-    background: disabled
-      ? "linear-gradient(180deg, #9a9a9a 0%, #6f6f6f 100%)"
-      : "linear-gradient(180deg, #2a2a2a 0%, #000000 100%)",
-    border: `1px solid ${disabled ? "#7a7a7a" : "#353535"}`,
-    boxShadow: disabled
-      ? "none"
-      : "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4)",
-  }),
-  card: {
-    border: "1px solid #e1e1e1",
+    fontSize: "18px",
+    letterSpacing: "0.02em",
+    color: TEXT_DARK,
+    margin: 0,
+  },
+  subtitleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginTop: "3px",
+  },
+  subtitleText: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "12px",
+    color: TEXT_DARK,
+  },
+  innerCard: {
+    border: `1px solid ${BORDER}`,
     borderRadius: "8px",
-    overflow: "hidden",
     background: "#fff",
-  },
-  sectionHeader: {
+    padding: "16px",
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "16px 20px",
-    background: "#f2f2f2",
-    cursor: "pointer",
-    userSelect: "none",
+    flexDirection: "column",
+    gap: "16px",
   },
-  sectionTitle: { fontWeight: 600, fontSize: "14px" },
-  chevron: (open) => ({
-    transform: open ? "rotate(180deg)" : "rotate(0deg)",
-    transition: "transform 0.2s ease",
-    color: BLUE,
-  }),
-  row: {
+  licenseBox: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "14px 20px",
-    borderTop: "1px solid #f0f0f0",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "10px",
+    background: LICENSE_BG,
+    border: `1px solid ${LICENSE_BORDER}`,
+    borderRadius: "4px",
   },
-  rowLeft: { display: "flex", alignItems: "center", gap: "14px" },
-  providerName: { fontSize: "14px", fontWeight: 500 },
-  providerSub: { fontSize: "12px", color: "#888" },
+  licenseTitle: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "16px",
+    fontWeight: 500,
+    color: TEXT_DARK,
+  },
+  divider: {
+    border: "none",
+    borderTop: `1px solid ${BORDER}`,
+    margin: 0,
+  },
+  rowBetween: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  label: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "14px",
+    fontWeight: 500,
+    color: TEXT_DARK,
+  },
+  subLabel: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "12px",
+    fontWeight: 400,
+    color: TEXT_MUTED,
+    maxWidth: "570px",
+    marginTop: "4px",
+  },
+  serialPill: {
+    padding: "4px 10px",
+    background: "#000000",
+    borderRadius: "4px",
+    color: "#fff",
+    fontFamily: "Inter, sans-serif",
+    fontSize: "14px",
+    fontWeight: 500,
+  },
+  providersBox: {
+    background: "#fff",
+    border: `1px solid ${BORDER}`,
+    borderRadius: "4px",
+    padding: "10px 10px 13px",
+  },
+  providerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "12px 10px",
+  },
 };
 
-function ChevronIcon({ open }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" style={styles.chevron(open)}>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6 9l6 6 6-6"
-      />
-    </svg>
-  );
+function saveWrapperStyle(disabled) {
+  return {
+    display: "inline-flex",
+    padding: "2px",
+    borderRadius: "8px",
+    background: disabled
+      ? "linear-gradient(180deg, #9a9a9a 0%, #6f6f6f 100%)"
+      : "linear-gradient(180deg, #2A2A2A 0%, #000000 100%)",
+  };
 }
 
-function ProviderRow({ icon, name, subtitle, checked, onToggle, disabled }) {
+function saveButtonStyle(disabled) {
+  return {
+    padding: "8px 24px",
+    borderRadius: "6px",
+    border: `1px solid ${disabled ? "#7a7a7a" : "#353535"}`,
+    background: disabled
+      ? "linear-gradient(180deg, #a8a8a8 0%, #7d7d7d 100%)"
+      : "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
+    color: "#fff",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 600,
+    fontSize: "16px",
+    cursor: disabled ? "default" : "pointer",
+  };
+}
+
+function ProviderRow({ name, subtitle, checked, onToggle, disabled }) {
   return (
-    <div style={styles.row}>
-      <div style={styles.rowLeft}>
-        {icon}
-        <div>
-          <div style={styles.providerName}>{name}</div>
-          {subtitle && <div style={styles.providerSub}>{subtitle}</div>}
-        </div>
+    <div style={styles.providerRow}>
+      <div>
+        <div style={styles.label}>{name}</div>
+        {subtitle && <div style={{ ...styles.subLabel, marginTop: "2px" }}>{subtitle}</div>}
       </div>
       <ToggleSwitch checked={checked} onChange={onToggle} disabled={disabled} />
     </div>
@@ -239,17 +257,15 @@ export default function Settings() {
   const shopify = useAppBridge();
 
   const [values, setValues] = useState({
+    appEnabled: settings.appEnabled,
     googleEnabled: settings.googleEnabled,
     twitterEnabled: settings.twitterEnabled,
     facebookEnabled: settings.facebookEnabled,
     linkedinEnabled: settings.linkedinEnabled,
     amazonEnabled: settings.amazonEnabled,
   });
-  const [sectionOpen, setSectionOpen] = useState(true);
 
-  const isDirty = Object.keys(values).some(
-    (key) => values[key] !== settings[key],
-  );
+  const isDirty = Object.keys(values).some((key) => values[key] !== settings[key]);
   const isSaving = fetcher.state !== "idle";
 
   useEffect(() => {
@@ -258,81 +274,105 @@ export default function Settings() {
     }
   }, [fetcher.data, shopify]);
 
-  const toggle = (field) => {
-    setValues((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
+  const toggle = (field) => setValues((prev) => ({ ...prev, [field]: !prev[field] }));
 
   const handleSave = () => {
     const formData = new FormData();
-    Object.entries(values).forEach(([key, val]) => {
-      formData.set(key, String(val));
-    });
+    Object.entries(values).forEach(([key, val]) => formData.set(key, String(val)));
     fetcher.submit(formData, { method: "POST" });
   };
 
   return (
-    <s-page heading="Settings">
+    <s-page>
       <TopIconNav active="settings" />
 
-      <div style={styles.headerRow}>
-        <h1 style={styles.heading}>Settings</h1>
-        <button
-          style={styles.saveButton(!isDirty || isSaving)}
-          disabled={!isDirty || isSaving}
-          onClick={handleSave}
-        >
-          {isSaving ? "Saving..." : "Save Settings"}
-        </button>
-      </div>
-
-      <div style={styles.card}>
-        <div
-          style={styles.sectionHeader}
-          onClick={() => setSectionOpen((o) => !o)}
-        >
-          <span style={styles.sectionTitle}>Login Providers</span>
-          <ChevronIcon open={sectionOpen} />
+      <div style={styles.outerCard}>
+        <div style={styles.headerRow}>
+          <div>
+            <h1 style={styles.heading}>Configurations</h1>
+            <div style={styles.subtitleRow}>
+              <span style={styles.subtitleText}>
+                Drag and drop rules to change their priority. Higher rules are evaluated first.
+              </span>
+              <InfoIcon />
+            </div>
+          </div>
+          <div style={saveWrapperStyle(!isDirty || isSaving)}>
+            <button
+              style={saveButtonStyle(!isDirty || isSaving)}
+              disabled={!isDirty || isSaving}
+              onClick={handleSave}
+            >
+              {isSaving ? "Saving..." : "Save Settings"}
+            </button>
+          </div>
         </div>
 
-        {sectionOpen && (
-          <>
+        <div style={styles.innerCard}>
+          {/* License and Status */}
+          <div style={styles.licenseBox}>
+            <div style={styles.licenseTitle}>License and Status</div>
+            <hr style={styles.divider} />
+
+            <div style={styles.rowBetween}>
+              <div style={styles.label}>Serial Key</div>
+              <div style={styles.serialPill}>{settings.serialKey}</div>
+            </div>
+            <hr style={styles.divider} />
+
+            <div style={styles.rowBetween}>
+              <div>
+                <div style={styles.label}>Status</div>
+                <div style={styles.subLabel}>
+                  Enable or disable the app globally. When disabled, no recommendations will be
+                  shown on your store.
+                </div>
+              </div>
+              <ToggleSwitch
+                checked={values.appEnabled}
+                onChange={() => toggle("appEnabled")}
+              />
+            </div>
+          </div>
+
+          {/* Login providers */}
+          <div style={styles.providersBox}>
             <ProviderRow
-              icon={<GoogleIcon />}
               name="Google"
               subtitle="Continue with Google"
               checked={values.googleEnabled}
               onToggle={() => toggle("googleEnabled")}
             />
+            <hr style={styles.divider} />
             <ProviderRow
-              icon={<LinkedInIcon />}
-              name="LinkedIn"
-              subtitle="Continue with LinkedIn"
+              name="Linkedin"
+              subtitle="Continue with Linkedin"
               checked={values.linkedinEnabled}
               onToggle={() => toggle("linkedinEnabled")}
             />
+            <hr style={styles.divider} />
             <ProviderRow
-              icon={<FacebookIcon />}
               name="Facebook"
               subtitle="Continue with Facebook"
               checked={values.facebookEnabled}
               onToggle={() => toggle("facebookEnabled")}
             />
+            <hr style={styles.divider} />
             <ProviderRow
-              icon={<XIcon />}
               name="X (Twitter)"
-              subtitle="Continue with X"
+              subtitle="Continue with Twitter"
               checked={values.twitterEnabled}
               onToggle={() => toggle("twitterEnabled")}
             />
+            <hr style={styles.divider} />
             <ProviderRow
-              icon={<AmazonIcon />}
               name="Amazon"
               subtitle="Continue with Amazon"
               checked={values.amazonEnabled}
               onToggle={() => toggle("amazonEnabled")}
             />
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </s-page>
   );

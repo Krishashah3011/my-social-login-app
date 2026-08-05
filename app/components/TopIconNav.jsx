@@ -16,6 +16,8 @@ const SettingsIcon = () => (
   </svg>
 );
 
+// Exact markup from the Figma export: outer 1px black ring + blue 40x40
+// fill + white person glyph, self-contained (no separate wrapper border).
 const AccountIcon = () => (
   <svg width="40" height="40" viewBox="910 4 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="910.5" y="4.5" width="39" height="39" rx="7.5" stroke="black"/>
