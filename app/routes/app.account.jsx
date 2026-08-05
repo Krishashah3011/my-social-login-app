@@ -25,6 +25,8 @@ export const loader = async ({ request }) => {
     shop: session.shop,
     username: settings.username || "",
     accountEmail: settings.accountEmail || "",
+    plan: settings.plan || "",
+    subscriptionId: settings.subscriptionId || "",
   };
 };
 
@@ -242,7 +244,7 @@ function EditableField({ icon, label, value, field, onSave, saving }) {
 }
 
 export default function Account() {
-  const { shop, username, accountEmail } = useLoaderData();
+  const { shop, username, accountEmail, plan, subscriptionId } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
@@ -306,6 +308,55 @@ export default function Account() {
                 <span style={styles.value}>{shop}</span>
               </div>
             </div>
+
+            <div style={styles.fieldGroup}>
+              <span style={styles.label}>Plan</span>
+              <div style={styles.inputBox}>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M7 2V5M17 2V5M3 9H21M5 5H19C20.1046 5 21 5.89543 21 7V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V7C3 5.89543 3.89543 5 5 5Z"
+                    stroke={BLUE}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                <span style={styles.value}>{plan || "—"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.row}>
+            <div style={styles.fieldGroup}>
+              <span style={styles.label}>Subscription ID</span>
+              <div style={styles.inputBox}>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 4H18M8 8H18M8 12H14M5 4H5.01M5 8H5.01M5 12H5.01M4 20H20C20.5523 20 21 19.5523 21 19V5C21 4.44772 20.5523 4 20 4H4C3.44772 4 3 4.44772 3 5V19C3 19.5523 3.44772 20 4 20Z"
+                    stroke={BLUE}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                <span style={styles.value}>{subscriptionId || "—"}</span>
+              </div>
+            </div>
+
             <div style={{ flex: 1 }} />
           </div>
 

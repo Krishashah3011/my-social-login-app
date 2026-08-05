@@ -118,7 +118,7 @@ function AlertIcon() {
 
 const styles = {
   hero: {
-    width: "100%",
+    width: "95.8%",
     minHeight: "180px",
     borderRadius: "20px",
     background:

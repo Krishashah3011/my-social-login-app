@@ -119,7 +119,7 @@ const styles = {
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: "16px",
   },
   heading: {
@@ -186,7 +186,7 @@ const styles = {
     fontSize: "12px",
     fontWeight: 400,
     color: TEXT_MUTED,
-    maxWidth: "570px",
+    //maxWidth: "570px",
     marginTop: "4px",
   },
   serialPill: {
@@ -274,7 +274,39 @@ export default function Settings() {
     }
   }, [fetcher.data, shopify]);
 
-  const toggle = (field) => setValues((prev) => ({ ...prev, [field]: !prev[field] }));
+  const toggle = (field) => {
+    setValues((prev) => {
+      // Master Status toggle
+      if (field === "appEnabled") {
+        const newStatus = !prev.appEnabled;
+
+        // Turning OFF -> turn everything OFF
+        if (!newStatus) {
+          return {
+            appEnabled: false,
+            googleEnabled: false,
+            twitterEnabled: false,
+            facebookEnabled: false,
+            linkedinEnabled: false,
+            amazonEnabled: false,
+          };
+        }
+
+        // Turning ON -> only enable the app.
+        // Providers stay OFF until you enable them manually.
+        return {
+          ...prev,
+          appEnabled: true,
+        };
+      }
+
+      // Individual provider toggle
+      return {
+        ...prev,
+        [field]: !prev[field],
+      };
+    });
+  };
 
   const handleSave = () => {
     const formData = new FormData();
@@ -290,12 +322,6 @@ export default function Settings() {
         <div style={styles.headerRow}>
           <div>
             <h1 style={styles.heading}>Configurations</h1>
-            <div style={styles.subtitleRow}>
-              <span style={styles.subtitleText}>
-                Drag and drop rules to change their priority. Higher rules are evaluated first.
-              </span>
-              <InfoIcon />
-            </div>
           </div>
           <div style={saveWrapperStyle(!isDirty || isSaving)}>
             <button
