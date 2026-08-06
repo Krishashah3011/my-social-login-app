@@ -212,39 +212,6 @@ const LINE_COLORS = {
 };
 
 const styles = {
-  hero: {
-    width: "95.8%",
-    minHeight: "180px",
-    borderRadius: "20px",
-    background:
-      "linear-gradient(92.71deg, #003456 0.09%, #004868 99.91%)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "14px",
-    padding: "24px 20px",
-    marginBottom: "16px",
-    textAlign: "center",
-  },
-
-  heroTitle: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 800,
-    fontSize: "28px",
-    lineHeight: "34px",
-    color: "#FFFFFF",
-    margin: 0,
-  },
-
-  heroSubtitle: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 500,
-    fontSize: "18px",
-    lineHeight: "22px",
-    color: "#FFFFFF",
-    margin: 0,
-  },
 
   card: {
     background: "#FFFFFF",
@@ -355,6 +322,13 @@ const styles = {
     height: "320px",
     marginTop: "16px",
   },
+
+  heroBanner: {
+    width: "95.8%",
+    borderRadius: "20px",
+    display: "block",
+    marginBottom: "16px",
+  },
 };
 
 export default function Index() {
@@ -370,15 +344,11 @@ export default function Index() {
       <TopIconNav active="home" />
 
       {/* Hero */}
-      <div style={styles.hero}>
-        <h1 style={styles.heroTitle}>
-          Welcome to Social Login App!
-        </h1>
-
-        <p style={styles.heroSubtitle}>
-          Simplify Customer Login with My Social Login App!
-        </p>
-      </div>
+      <img
+        src="/banner.png"
+        alt="Welcome to Milople Social Login App"
+        style={styles.heroBanner}
+      />
 
       {/* Setup Progress */}
       <div style={styles.card}>
