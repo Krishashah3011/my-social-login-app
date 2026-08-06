@@ -172,7 +172,7 @@ export async function loader({ request }) {
   await saveCode(authCode, {
     email: user.email,
     name: user.name,
-    id: user.id,
+    id: shopifyCustomerId,
     nonce,
   });
 
