@@ -1,12 +1,12 @@
 import { createCookieSessionStorage } from "react-router";
 
-const sessionSecret = process.env.SESSION_SECRET || "dev-secret";
+const sessionSecretML = process.env.SESSION_SECRET || "dev-secret";
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "google_session",
     secure: process.env.NODE_ENV === "production",
-    secrets: [sessionSecret],
+    secrets: [sessionSecretML],
     sameSite: "lax",
     path: "/",
     httpOnly: true,

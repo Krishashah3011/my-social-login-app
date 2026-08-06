@@ -1,15 +1,15 @@
-const codes = new Map();
+const codesML = new Map();
 
-export function saveCode(code, data) {
-  codes.set(code, data);
+export function saveCode(codeML, dataML) {
+  codesML.set(codeML, dataML);
 
   setTimeout(() => {
-    codes.delete(code);
+    codesML.delete(codeML);
   }, 5 * 60 * 1000);
 }
 
-export function getCode(code) {
-  const data = codes.get(code);
-  codes.delete(code);
-  return data;
+export function getCode(codeML) {
+  const dataML = codesML.get(codeML);
+  codesML.delete(codeML);
+  return dataML;
 }

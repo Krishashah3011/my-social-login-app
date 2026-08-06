@@ -4,25 +4,25 @@ import { unauthenticated } from "../shopify.server";
 import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const stateData = url.searchParams.get("state");
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
+  const codeML = urlML.searchParams.get("code");
+  const stateDataML = urlML.searchParams.get("state");
 
-  const host = request.headers.get("x-forwarded-host") || url.host;
-  const callbackUrl = `https://${host}/google/callback`;
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const callbackUrlML = `https://${hostML}/google/callback`;
 
-  if (!code) {
+  if (!codeML) {
     return new Response("No authorization code received", { status: 400 });
   }
 
-  if (!stateData) {
+  if (!stateDataML) {
     return new Response("Missing state", { status: 400 });
   }
 
-  const [state, redirect_uri, nonce] = stateData.split("|");
+  const [stateML, redirect_uriML, nonceML] = stateDataML.split("|");
 
-  const tokenResponse = await fetch(
+  const tokenResponseML = await fetch(
     "https://oauth2.googleapis.com/token",
     {
       method: "POST",
@@ -32,48 +32,48 @@ export async function loader({ request }) {
       body: new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        code,
+        code: codeML,
         grant_type: "authorization_code",
-        redirect_uri: callbackUrl,
+        redirect_uri: callbackUrlML,
       }),
     }
   );
 
-  const tokens = await tokenResponse.json();
+  const tokensML = await tokenResponseML.json();
 
-  if (!tokens.access_token) {
+  if (!tokensML.access_token) {
     return new Response("Google token exchange failed", {
       status: 400,
     });
   }
 
-  const userResponse = await fetch(
+  const userResponseML = await fetch(
     "https://www.googleapis.com/oauth2/v2/userinfo",
     {
       headers: {
-        Authorization: `Bearer ${tokens.access_token}`,
+        Authorization: `Bearer ${tokensML.access_token}`,
       },
     }
   );
 
-  const googleUser = await userResponse.json();
+  const googleUserML = await userResponseML.json();
 
-  const shopSession = await prisma.session.findFirst({
+  const shopSessionML = await prisma.session.findFirst({
     where: { isOnline: false },
   });
 
-  if (!shopSession) {
+  if (!shopSessionML) {
     throw new Error("No Shopify session found");
   }
 
-  const { admin } = await unauthenticated.admin(shopSession.shop);
+  const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
 
-  let shopifyCustomerId = null;
+  let shopifyCustomerIdML = null;
 
-  const existingCustomerResponse = await admin.graphql(
+  const existingCustomerResponseML = await adminML.graphql(
     `#graphql
     query {
-      customers(first:1, query:"email:${googleUser.email}") {
+      customers(first:1, query:"email:${googleUserML.email}") {
         edges {
           node {
             id
@@ -84,16 +84,16 @@ export async function loader({ request }) {
     }`
   );
 
-  const existingData = await existingCustomerResponse.json();
+  const existingDataML = await existingCustomerResponseML.json();
 
-  const existingCustomer =
-    existingData.data?.customers?.edges[0]?.node;
+  const existingCustomerML =
+    existingDataML.data?.customers?.edges[0]?.node;
 
-  if (existingCustomer) {
-    shopifyCustomerId = existingCustomer.id;
+  if (existingCustomerML) {
+    shopifyCustomerIdML = existingCustomerML.id;
 
   } else {
-    const customerResponse = await admin.graphql(
+    const customerResponseML = await adminML.graphql(
       `#graphql
       mutation customerCreate($input: CustomerInput!) {
         customerCreate(input:$input){
@@ -110,65 +110,65 @@ export async function loader({ request }) {
       {
         variables: {
           input: {
-            email: googleUser.email,
-            firstName: googleUser.given_name,
-            lastName: googleUser.family_name,
+            email: googleUserML.email,
+            firstName: googleUserML.given_name,
+            lastName: googleUserML.family_name,
           },
         },
       }
     );
 
-    const result = await customerResponse.json();
+    const resultML = await customerResponseML.json();
 
-    const customerCreateResult =
-      result.data?.customerCreate;
+    const customerCreateResultML =
+      resultML.data?.customerCreate;
 
-    if (!customerCreateResult) {
+    if (!customerCreateResultML) {
       return new Response(
         "Customer creation failed",
         { status: 400 }
       );
     }
 
-    if (customerCreateResult.userErrors.length > 0) {
+    if (customerCreateResultML.userErrors.length > 0) {
       return new Response(
         "Customer creation failed",
         { status: 400 }
       );
     }
 
-    shopifyCustomerId =
-      customerCreateResult.customer?.id;
+    shopifyCustomerIdML =
+      customerCreateResultML.customer?.id;
   }
 
-  const user = await prisma.googleUser.upsert({
+  const userML = await prisma.googleUser.upsert({
     where: {
-      email: googleUser.email,
+      email: googleUserML.email,
     },
     update: {
-      name: googleUser.name,
-      profileImage: googleUser.picture,
-      shopifyCustomerId,
+      name: googleUserML.name,
+      profileImage: googleUserML.picture,
+      shopifyCustomerId: shopifyCustomerIdML,
     },
     create: {
-      googleId: googleUser.id,
-      name: googleUser.name,
-      email: googleUser.email,
-      profileImage: googleUser.picture,
-      shopifyCustomerId,
+      googleId: googleUserML.id,
+      name: googleUserML.name,
+      email: googleUserML.email,
+      profileImage: googleUserML.picture,
+      shopifyCustomerId: shopifyCustomerIdML,
     },
   });
 
-  const authCode = crypto.randomUUID();
+  const authCodeML = crypto.randomUUID();
 
-  await saveCode(authCode, {
-    email: user.email,
-    name: user.name,
-    id: shopifyCustomerId,
-    nonce,
+  await saveCode(authCodeML, {
+    email: userML.email,
+    name: userML.name,
+    id: shopifyCustomerIdML,
+    nonce: nonceML,
   });
 
-  if (!redirect_uri) {
+  if (!redirect_uriML) {
     return new Response(
       "Missing redirect_uri",
       { status: 400 }
@@ -176,7 +176,7 @@ export async function loader({ request }) {
   }
 
   return redirect(
-    `${redirect_uri}?code=${authCode}&state=${state}`
+    `${redirect_uriML}?code=${authCodeML}&state=${stateML}`
   );
 }
 

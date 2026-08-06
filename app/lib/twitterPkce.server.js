@@ -1,11 +1,11 @@
-const verifierStore = new Map();
+const verifierStoreML = new Map();
 
-export function saveVerifier(state, codeVerifier) {
-  verifierStore.set(state, codeVerifier);
+export function saveVerifier(stateML, codeVerifierML) {
+  verifierStoreML.set(stateML, codeVerifierML);
 }
 
-export function getVerifier(state) {
-  const verifier = verifierStore.get(state);
-  verifierStore.delete(state);
-  return verifier;
+export function getVerifier(stateML) {
+  const verifierML = verifierStoreML.get(stateML);
+  verifierStoreML.delete(stateML);
+  return verifierML;
 }

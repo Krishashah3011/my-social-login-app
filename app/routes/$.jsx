@@ -1,19 +1,19 @@
 import { exportJWK } from "jose";
 import { getKeys } from "../utils/keys.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const host = request.headers.get("x-forwarded-host") || url.host;
-  const baseUrl = `https://${host}`;
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const baseUrlML = `https://${hostML}`;
 
-  if (url.pathname === "/.well-known/jwks.json") {
-    const { publicKey } = await getKeys();
-    const jwk = await exportJWK(publicKey);
+  if (urlML.pathname === "/.well-known/jwks.json") {
+    const { publicKey: publicKeyML } = await getKeys();
+    const jwkML = await exportJWK(publicKeyML);
 
     return Response.json({
       keys: [
         {
-          ...jwk,
+          ...jwkML,
           kid: "shopify-login-key",
           use: "sig",
           alg: "RS256",
@@ -22,12 +22,12 @@ export async function loader({ request }) {
     });
   }
 
-  if (url.pathname === "/.well-known/openid-configuration") {
+  if (urlML.pathname === "/.well-known/openid-configuration") {
     return Response.json({
-      issuer: baseUrl,
-      authorization_endpoint: `${baseUrl}/authorize`,
-      token_endpoint: `${baseUrl}/token`,
-      jwks_uri: `${baseUrl}/.well-known/jwks.json`,
+      issuer: baseUrlML,
+      authorization_endpoint: `${baseUrlML}/authorize`,
+      token_endpoint: `${baseUrlML}/token`,
+      jwks_uri: `${baseUrlML}/.well-known/jwks.json`,
       response_types_supported: ["code"],
       subject_types_supported: ["public"],
       id_token_signing_alg_values_supported: ["RS256"],

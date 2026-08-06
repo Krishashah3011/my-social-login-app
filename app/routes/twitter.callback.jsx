@@ -5,32 +5,32 @@ import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 import { getVerifier } from "../lib/twitterPkce.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const code = url.searchParams.get("code");
-  const stateData = url.searchParams.get("state");
+  const codeML = urlML.searchParams.get("code");
+  const stateDataML = urlML.searchParams.get("state");
 
-  const host = request.headers.get("x-forwarded-host") || url.host;
-  const callbackUrl = `https://${host}/twitter/callback`;
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const callbackUrlML = `https://${hostML}/twitter/callback`;
 
-  if (!code) {
+  if (!codeML) {
     return new Response("No Twitter authorization code received", { status: 400 });
   }
 
-  if (!stateData) {
+  if (!stateDataML) {
     return new Response("Missing state", { status: 400 });
   }
 
-  const [state, redirect_uri, nonce] = stateData.split("|");
+  const [stateML, redirect_uriML, nonceML] = stateDataML.split("|");
 
-  const codeVerifier = getVerifier(state);
+  const codeVerifierML = getVerifier(stateML);
 
-  if (!codeVerifier) {
+  if (!codeVerifierML) {
     return new Response("Missing or expired PKCE verifier for this login attempt", { status: 400 });
   }
 
-  const tokenResponse = await fetch("https://api.twitter.com/2/oauth2/token", {
+  const tokenResponseML = await fetch("https://api.twitter.com/2/oauth2/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -39,54 +39,54 @@ export async function loader({ request }) {
         Buffer.from(`${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`).toString("base64"),
     },
     body: new URLSearchParams({
-      code,
+      code: codeML,
       grant_type: "authorization_code",
       client_id: process.env.X_CLIENT_ID,
-      redirect_uri: callbackUrl,
-      code_verifier: codeVerifier,
+      redirect_uri: callbackUrlML,
+      code_verifier: codeVerifierML,
     }),
   });
 
-  const tokens = await tokenResponse.json();
+  const tokensML = await tokenResponseML.json();
 
-  if (!tokens.access_token) {
+  if (!tokensML.access_token) {
     return new Response("Twitter token exchange failed", { status: 400 });
   }
 
-  const userResponse = await fetch(
+  const userResponseML = await fetch(
     "https://api.twitter.com/2/users/me?user.fields=confirmed_email,profile_image_url,name,username",
     {
       headers: {
-        Authorization: `Bearer ${tokens.access_token}`,
+        Authorization: `Bearer ${tokensML.access_token}`,
       },
     }
   );
 
-  const twitterUserData = await userResponse.json();
+  const twitterUserDataML = await userResponseML.json();
 
-  const twitterUser = twitterUserData.data;
+  const twitterUserML = twitterUserDataML.data;
 
-  if (!twitterUser?.confirmed_email) {
+  if (!twitterUserML?.confirmed_email) {
     return new Response(
       "Twitter did not return an email for this account. Check 'Request email from users' is enabled in the X Developer Portal and that the users.email scope was granted.",
       { status: 400 }
     );
   }
 
-  const shopSession = await prisma.session.findFirst({ where: { isOnline: false } });
+  const shopSessionML = await prisma.session.findFirst({ where: { isOnline: false } });
 
-  if (!shopSession) {
+  if (!shopSessionML) {
     throw new Error("No Shopify session found");
   }
 
-  const { admin } = await unauthenticated.admin(shopSession.shop);
+  const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
 
-  let shopifyCustomerId = null;
+  let shopifyCustomerIdML = null;
 
-  const existingCustomerResponse = await admin.graphql(
+  const existingCustomerResponseML = await adminML.graphql(
     `#graphql
     query {
-      customers(first:1, query:"email:${twitterUser.confirmed_email}") {
+      customers(first:1, query:"email:${twitterUserML.confirmed_email}") {
         edges {
           node {
             id
@@ -97,13 +97,13 @@ export async function loader({ request }) {
     }`
   );
 
-  const existingData = await existingCustomerResponse.json();
-  const existingCustomer = existingData.data?.customers?.edges[0]?.node;
+  const existingDataML = await existingCustomerResponseML.json();
+  const existingCustomerML = existingDataML.data?.customers?.edges[0]?.node;
 
-  if (existingCustomer) {
-    shopifyCustomerId = existingCustomer.id;
+  if (existingCustomerML) {
+    shopifyCustomerIdML = existingCustomerML.id;
   } else {
-    const customerResponse = await admin.graphql(
+    const customerResponseML = await adminML.graphql(
       `#graphql
       mutation customerCreate($input: CustomerInput!) {
         customerCreate(input:$input){
@@ -120,58 +120,58 @@ export async function loader({ request }) {
       {
         variables: {
           input: {
-            email: twitterUser.confirmed_email,
-            firstName: twitterUser.name || "",
+            email: twitterUserML.confirmed_email,
+            firstName: twitterUserML.name || "",
           },
         },
       }
     );
 
-    const result = await customerResponse.json();
+    const resultML = await customerResponseML.json();
 
-    const customerCreateResult = result.data?.customerCreate;
+    const customerCreateResultML = resultML.data?.customerCreate;
 
-    if (!customerCreateResult) {
+    if (!customerCreateResultML) {
       return new Response("Customer creation failed", { status: 400 });
     }
 
-    if (customerCreateResult.userErrors.length > 0) {
+    if (customerCreateResultML.userErrors.length > 0) {
       return new Response("Customer creation failed", { status: 400 });
     }
 
-    shopifyCustomerId = customerCreateResult.customer.id;
+    shopifyCustomerIdML = customerCreateResultML.customer.id;
   }
 
-  const user = await prisma.twitterUser.upsert({
-    where: { email: twitterUser.confirmed_email },
+  const userML = await prisma.twitterUser.upsert({
+    where: { email: twitterUserML.confirmed_email },
     update: {
-      name: twitterUser.name,
-      profileImage: twitterUser.profile_image_url,
-      shopifyCustomerId,
+      name: twitterUserML.name,
+      profileImage: twitterUserML.profile_image_url,
+      shopifyCustomerId: shopifyCustomerIdML,
     },
     create: {
-      twitterId: twitterUser.id,
-      name: twitterUser.name,
-      email: twitterUser.confirmed_email,
-      profileImage: twitterUser.profile_image_url,
-      shopifyCustomerId,
+      twitterId: twitterUserML.id,
+      name: twitterUserML.name,
+      email: twitterUserML.confirmed_email,
+      profileImage: twitterUserML.profile_image_url,
+      shopifyCustomerId: shopifyCustomerIdML,
     },
   });
 
-  const authCode = crypto.randomUUID();
+  const authCodeML = crypto.randomUUID();
 
-  await saveCode(authCode, {
-    email: user.email,
-    name: user.name,
-    id: shopifyCustomerId,
-    nonce,
+  await saveCode(authCodeML, {
+    email: userML.email,
+    name: userML.name,
+    id: shopifyCustomerIdML,
+    nonce: nonceML,
   });
 
-  if (!redirect_uri) {
+  if (!redirect_uriML) {
     return new Response("Missing redirect_uri", { status: 400 });
   }
 
-  return redirect(`${redirect_uri}?code=${authCode}&state=${state}`);
+  return redirect(`${redirect_uriML}?code=${authCodeML}&state=${stateML}`);
 }
 
 export default function TwitterCallback() {

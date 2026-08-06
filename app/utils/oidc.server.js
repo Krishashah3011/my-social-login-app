@@ -1,26 +1,26 @@
 import { SignJWT } from "jose";
 import { getKeys } from "./keys.server";
 
-export async function createOIDCToken(user) {
-  const { privateKey } = await getKeys();
+export async function createOIDCToken(userML) {
+  const { privateKey: privateKeyML } = await getKeys();
 
-  const token = await new SignJWT({
-    email: user.email,
+  const tokenML = await new SignJWT({
+    email: userML.email,
     email_verified: true,
-    name: user.name,
-    nonce: user.nonce,
+    name: userML.name,
+    nonce: userML.nonce,
   })
     .setProtectedHeader({
       alg: "RS256",
       kid: "shopify-login-key",
       typ: "JWT",
     })
-    .setIssuer(user.issuer)
-    .setAudience(user.client_id)
-    .setSubject(user.id.toString())
+    .setIssuer(userML.issuer)
+    .setAudience(userML.client_id)
+    .setSubject(userML.id.toString())
     .setIssuedAt()
     .setExpirationTime("5m")
-    .sign(privateKey);
+    .sign(privateKeyML);
 
-  return token;
+  return tokenML;
 }

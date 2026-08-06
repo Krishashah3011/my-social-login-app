@@ -1,29 +1,29 @@
 import { generateKeyPair, exportJWK } from "jose";
 
-let keyPair;
+let keyPairML;
 
 export async function getKeys() {
 
-  if (keyPair) {
-    return keyPair;
+  if (keyPairML) {
+    return keyPairML;
   }
 
-  const { privateKey, publicKey } =
+  const { privateKey: privateKeyML, publicKey: publicKeyML } =
     await generateKeyPair("RS256");
 
-  keyPair = {
-    privateKey,
-    publicKey,
+  keyPairML = {
+    privateKey: privateKeyML,
+    publicKey: publicKeyML,
   };
-  return keyPair;
+  return keyPairML;
 }
 
 export async function getPublicJWK() {
-  const { publicKey } = await getKeys();
-  const jwk = await exportJWK(publicKey);
+  const { publicKey: publicKeyML } = await getKeys();
+  const jwkML = await exportJWK(publicKeyML);
 
   return {
-    ...jwk,
+    ...jwkML,
     kid: "shopify-login-key",
     use: "sig",
     alg: "RS256",

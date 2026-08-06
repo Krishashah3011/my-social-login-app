@@ -1,15 +1,15 @@
 import db from "../db.server";
 import { authenticate } from "../shopify.server";
 
-const ALLOWED_PROVIDERS = ["google", "linkedin", "facebook", "twitter", "amazon"];
-const LOGO_FIELD = {
+const ALLOWED_PROVIDERS_ML = ["google", "linkedin", "facebook", "twitter", "amazon"];
+const LOGO_FIELD_ML = {
   google: "googleLogo",
   linkedin: "linkedinLogo",
   facebook: "facebookLogo",
   twitter: "twitterLogo",
   amazon: "amazonLogo",
 };
-const ENABLED_FIELD = {
+const ENABLED_FIELD_ML = {
   google: "googleEnabled",
   linkedin: "linkedinEnabled",
   facebook: "facebookEnabled",
@@ -17,7 +17,7 @@ const ENABLED_FIELD = {
   amazon: "amazonEnabled",
 };
 
-const STAGED_UPLOADS_CREATE = `#graphql
+const STAGED_UPLOADS_CREATE_ML = `#graphql
   mutation stagedUploadsCreate($input: [StagedUploadInput!]!) {
     stagedUploadsCreate(input: $input) {
       stagedTargets {
@@ -30,7 +30,7 @@ const STAGED_UPLOADS_CREATE = `#graphql
   }
 `;
 
-const FILE_CREATE = `#graphql
+const FILE_CREATE_ML = `#graphql
   mutation fileCreate($files: [FileCreateInput!]!) {
     fileCreate(files: $files) {
       files {
@@ -44,102 +44,102 @@ const FILE_CREATE = `#graphql
   }
 `;
 
-export const action = async ({ request }) => {
-  const { session, admin } = await authenticate.admin(request);
-  const formData = await request.formData();
+export const action = async ({ request: requestML }) => {
+  const { session: sessionML, admin: adminML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
 
-  const provider = formData.get("provider");
-  const intent = formData.get("intent");
+  const providerML = formDataML.get("provider");
+  const intentML = formDataML.get("intent");
 
-  if (!ALLOWED_PROVIDERS.includes(provider)) {
+  if (!ALLOWED_PROVIDERS_ML.includes(providerML)) {
     return { error: "Invalid provider" };
   }
 
-  const settings = await db.shopSettings.findUnique({
-    where: { shop: session.shop },
+  const settingsML = await db.shopSettings.findUnique({
+    where: { shop: sessionML.shop },
   });
 
-  if (!settings || !settings[ENABLED_FIELD[provider]]) {
+  if (!settingsML || !settingsML[ENABLED_FIELD_ML[providerML]]) {
     return { error: "Provider is disabled" };
   }
 
-  if (intent === "reset") {
-    const updated = await db.shopSettings.update({
-      where: { shop: session.shop },
-      data: { [LOGO_FIELD[provider]]: null },
+  if (intentML === "reset") {
+    const updatedML = await db.shopSettings.update({
+      where: { shop: sessionML.shop },
+      data: { [LOGO_FIELD_ML[providerML]]: null },
     });
-    return { settings: updated };
+    return { settings: updatedML };
   }
 
-  const file = formData.get("file");
-  if (!file || typeof file === "string") {
+  const fileML = formDataML.get("file");
+  if (!fileML || typeof fileML === "string") {
     return { error: "No file provided" };
   }
 
-  const filename = file.name || `${provider}-logo.png`;
-  const mimeType = file.type || "image/png";
-  const fileSize = String(file.size);
+  const filenameML = fileML.name || `${providerML}-logo.png`;
+  const mimeTypeML = fileML.type || "image/png";
+  const fileSizeML = String(fileML.size);
 
-  const stagedResponse = await admin.graphql(STAGED_UPLOADS_CREATE, {
+  const stagedResponseML = await adminML.graphql(STAGED_UPLOADS_CREATE_ML, {
     variables: {
       input: [
         {
-          filename,
-          mimeType,
-          fileSize,
+          filename: filenameML,
+          mimeType: mimeTypeML,
+          fileSize: fileSizeML,
           resource: "FILE",
           httpMethod: "POST",
         },
       ],
     },
   });
-  const stagedJson = await stagedResponse.json();
-  const stagedErrors = stagedJson.data?.stagedUploadsCreate?.userErrors || [];
-  if (stagedErrors.length) {
-    return { error: stagedErrors.map((e) => e.message).join(", ") };
+  const stagedJsonML = await stagedResponseML.json();
+  const stagedErrorsML = stagedJsonML.data?.stagedUploadsCreate?.userErrors || [];
+  if (stagedErrorsML.length) {
+    return { error: stagedErrorsML.map((eML) => eML.message).join(", ") };
   }
 
-  const target = stagedJson.data.stagedUploadsCreate.stagedTargets[0];
+  const targetML = stagedJsonML.data.stagedUploadsCreate.stagedTargets[0];
 
-  const uploadForm = new FormData();
-  target.parameters.forEach((param) => {
-    uploadForm.append(param.name, param.value);
+  const uploadFormML = new FormData();
+  targetML.parameters.forEach((paramML) => {
+    uploadFormML.append(paramML.name, paramML.value);
   });
-  uploadForm.append("file", file, filename);
+  uploadFormML.append("file", fileML, filenameML);
 
-  const uploadRes = await fetch(target.url, {
+  const uploadResML = await fetch(targetML.url, {
     method: "POST",
-    body: uploadForm,
+    body: uploadFormML,
   });
 
-  if (!uploadRes.ok) {
+  if (!uploadResML.ok) {
     return { error: "Upload to Shopify storage failed" };
   }
 
-  const fileCreateResponse = await admin.graphql(FILE_CREATE, {
+  const fileCreateResponseML = await adminML.graphql(FILE_CREATE_ML, {
     variables: {
       files: [
         {
-          alt: `${provider} login icon`,
+          alt: `${providerML} login icon`,
           contentType: "IMAGE",
-          originalSource: target.resourceUrl,
+          originalSource: targetML.resourceUrl,
         },
       ],
     },
   });
-  const fileCreateJson = await fileCreateResponse.json();
-  const fileErrors = fileCreateJson.data?.fileCreate?.userErrors || [];
-  if (fileErrors.length) {
-    return { error: fileErrors.map((e) => e.message).join(", ") };
+  const fileCreateJsonML = await fileCreateResponseML.json();
+  const fileErrorsML = fileCreateJsonML.data?.fileCreate?.userErrors || [];
+  if (fileErrorsML.length) {
+    return { error: fileErrorsML.map((eML) => eML.message).join(", ") };
   }
 
-  const createdFile = fileCreateJson.data.fileCreate.files[0];
-  const finalUrl = createdFile?.image?.url || target.resourceUrl;
+  const createdFileML = fileCreateJsonML.data.fileCreate.files[0];
+  const finalUrlML = createdFileML?.image?.url || targetML.resourceUrl;
 
-  const updated = await db.shopSettings.update({
-    where: { shop: session.shop },
-    data: { [LOGO_FIELD[provider]]: finalUrl },
+  const updatedML = await db.shopSettings.update({
+    where: { shop: sessionML.shop },
+    data: { [LOGO_FIELD_ML[providerML]]: finalUrlML },
   });
 
-  return { settings: updated };
+  return { settings: updatedML };
 };

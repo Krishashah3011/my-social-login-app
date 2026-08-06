@@ -1,18 +1,18 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
-export const action = async ({ request }) => {
-  const { payload, session } = await authenticate.webhook(request);
+export const action = async ({ request: requestML }) => {
+  const { payload: payloadML, session: sessionML } = await authenticate.webhook(requestML);
 
-  const current = payload.current;
+  const currentML = payloadML.current;
 
-  if (session) {
+  if (sessionML) {
     await db.session.update({
       where: {
-        id: session.id,
+        id: sessionML.id,
       },
       data: {
-        scope: current.toString(),
+        scope: currentML.toString(),
       },
     });
   }

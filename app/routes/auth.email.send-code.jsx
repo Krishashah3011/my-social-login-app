@@ -2,9 +2,9 @@ import prisma from "../db.server";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
-const RESEND_COOLDOWN_SECONDS = 30;
+const RESEND_COOLDOWN_SECONDS_ML = 30;
 
-const transporter = nodemailer.createTransport({
+const transporterML = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
   secure: false,
@@ -15,70 +15,70 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function isValidEmailML(emailML) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailML);
 }
 
-export async function action({ request }) {
-  const formData = await request.formData();
-  const email = (formData.get("email") || "").toString().trim().toLowerCase();
-  const state = (formData.get("state") || "").toString();
-  const redirect_uri = (formData.get("redirect_uri") || "").toString();
-  const nonce = (formData.get("nonce") || "").toString();
+export async function action({ request: requestML }) {
+  const formDataML = await requestML.formData();
+  const emailML = (formDataML.get("email") || "").toString().trim().toLowerCase();
+  const stateML = (formDataML.get("state") || "").toString();
+  const redirect_uriML = (formDataML.get("redirect_uri") || "").toString();
+  const nonceML = (formDataML.get("nonce") || "").toString();
 
-  if (!isValidEmail(email)) {
+  if (!isValidEmailML(emailML)) {
     return { error: "Enter a valid email address" };
   }
 
-  const recent = await prisma.emailOtp.findFirst({
-    where: { email, consumed: false },
+  const recentML = await prisma.emailOtp.findFirst({
+    where: { email: emailML, consumed: false },
     orderBy: { createdAt: "desc" },
   });
 
-  if (recent) {
-    const secondsSinceLast = (Date.now() - recent.createdAt.getTime()) / 1000;
-    if (secondsSinceLast < RESEND_COOLDOWN_SECONDS) {
+  if (recentML) {
+    const secondsSinceLastML = (Date.now() - recentML.createdAt.getTime()) / 1000;
+    if (secondsSinceLastML < RESEND_COOLDOWN_SECONDS_ML) {
       return {
         error: `Please wait ${Math.ceil(
-          RESEND_COOLDOWN_SECONDS - secondsSinceLast
+          RESEND_COOLDOWN_SECONDS_ML - secondsSinceLastML
         )}s before requesting another code.`,
       };
     }
   }
 
-  const code = crypto.randomInt(100000, 1000000).toString();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const codeML = crypto.randomInt(100000, 1000000).toString();
+  const expiresAtML = new Date(Date.now() + 10 * 60 * 1000);
 
   await prisma.emailOtp.create({
     data: {
-      email,
-      code,
-      state,
-      redirectUri: redirect_uri,
-      nonce,
-      expiresAt,
+      email: emailML,
+      code: codeML,
+      state: stateML,
+      redirectUri: redirect_uriML,
+      nonce: nonceML,
+      expiresAt: expiresAtML,
     },
   });
 
   try {
-    await transporter.sendMail({
+    await transporterML.sendMail({
       from: `"Login" <${process.env.SMTP_FROM_EMAIL}>`,
-      to: email,
+      to: emailML,
       subject: "Your login code",
       html: `
         <p>Your verification code is:</p>
-        <h2 style="letter-spacing:4px">${code}</h2>
+        <h2 style="letter-spacing:4px">${codeML}</h2>
         <p>This code expires in 10 minutes.</p>
       `,
     });
-  } catch (err) {
+  } catch (errML) {
     return { error: "Failed to send code. Try again." };
   }
 
   return {
     success: true,
-    email,
+    email: emailML,
     expiresInSeconds: 600,
-    cooldownSeconds: RESEND_COOLDOWN_SECONDS,
+    cooldownSeconds: RESEND_COOLDOWN_SECONDS_ML,
   };
 }

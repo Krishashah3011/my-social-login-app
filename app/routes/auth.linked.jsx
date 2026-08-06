@@ -1,45 +1,45 @@
 import { redirect } from "react-router";
 import db from "../db.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const state = url.searchParams.get("state");
-  const redirect_uri = url.searchParams.get("redirect_uri");
-  const nonce = url.searchParams.get("nonce");
+  const stateML = urlML.searchParams.get("state");
+  const redirect_uriML = urlML.searchParams.get("redirect_uri");
+  const nonceML = urlML.searchParams.get("nonce");
 
-  const shop = process.env.SHOP_DOMAIN;
-  const settings = shop
-    ? await db.shopSettings.findUnique({ where: { shop } })
+  const shopML = process.env.SHOP_DOMAIN;
+  const settingsML = shopML
+    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
     : null;
 
-  if (settings && (!settings.appEnabled || !settings.linkedinEnabled)) {
-    const backToSelector =
+  if (settingsML && (!settingsML.appEnabled || !settingsML.linkedinEnabled)) {
+    const backToSelectorML =
       `/select-provider?` +
-      `state=${encodeURIComponent(state || "")}` +
-      `&redirect_uri=${encodeURIComponent(redirect_uri || "")}` +
-      `&nonce=${encodeURIComponent(nonce || "")}`;
-    return redirect(backToSelector);
+      `state=${encodeURIComponent(stateML || "")}` +
+      `&redirect_uri=${encodeURIComponent(redirect_uriML || "")}` +
+      `&nonce=${encodeURIComponent(nonceML || "")}`;
+    return redirect(backToSelectorML);
   }
 
-  const host =
-    request.headers.get("x-forwarded-host") || url.host;
+  const hostML =
+    requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrl =
-    `https://${host}/linked/callback`;
+  const callbackUrlML =
+    `https://${hostML}/linked/callback`;
 
-  const linkedURL =
+  const linkedURLML =
     "https://www.linkedin.com/oauth/v2/authorization?" +
     `client_id=${process.env.linked_CLIENT_ID}` +
-    `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
+    `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=openid%20profile%20email` +
     `&prompt=login` +
     `&state=${encodeURIComponent(
-      `${state}|${redirect_uri}|${nonce}`
+      `${stateML}|${redirect_uriML}|${nonceML}`
     )}`;
 
-  return redirect(linkedURL);
+  return redirect(linkedURLML);
 }
 
 export default function linkedAuth() {

@@ -3,26 +3,26 @@ import { useSearchParams, useFetcher, useLoaderData } from "react-router";
 import db from "../db.server";
 
 export const loader = async () => {
-  const shop = process.env.SHOP_DOMAIN;
+  const shopML = process.env.SHOP_DOMAIN;
 
-  const settings = shop
-    ? await db.shopSettings.findUnique({ where: { shop } })
+  const settingsML = shopML
+    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
     : null;
 
   return {
     logos: {
-      google: settings?.googleLogo || null,
-      linkedin: settings?.linkedinLogo || null,
-      facebook: settings?.facebookLogo || null,
-      twitter: settings?.twitterLogo || null,
-      amazon: settings?.amazonLogo || null,
+      google: settingsML?.googleLogo || null,
+      linkedin: settingsML?.linkedinLogo || null,
+      facebook: settingsML?.facebookLogo || null,
+      twitter: settingsML?.twitterLogo || null,
+      amazon: settingsML?.amazonLogo || null,
     },
     enabled: {
-      google: (settings?.appEnabled ?? true) && (settings?.googleEnabled ?? true),
-      linkedin: (settings?.appEnabled ?? true) && (settings?.linkedinEnabled ?? true),
-      facebook: (settings?.appEnabled ?? true) && (settings?.facebookEnabled ?? true),
-      twitter: (settings?.appEnabled ?? true) && (settings?.twitterEnabled ?? true),
-      amazon: (settings?.appEnabled ?? true) && (settings?.amazonEnabled ?? true),
+      google: (settingsML?.appEnabled ?? true) && (settingsML?.googleEnabled ?? true),
+      linkedin: (settingsML?.appEnabled ?? true) && (settingsML?.linkedinEnabled ?? true),
+      facebook: (settingsML?.appEnabled ?? true) && (settingsML?.facebookEnabled ?? true),
+      twitter: (settingsML?.appEnabled ?? true) && (settingsML?.twitterEnabled ?? true),
+      amazon: (settingsML?.appEnabled ?? true) && (settingsML?.amazonEnabled ?? true),
     },
   };
 };
@@ -96,7 +96,7 @@ function AmazonIcon() {
   );
 }
 
-const styles = {
+const stylesML = {
   page: {
     minHeight: "100vh",
     display: "flex",
@@ -154,197 +154,197 @@ const styles = {
 };
 
 export default function SelectProvider() {
-  const { logos, enabled } = useLoaderData();
-  const [searchParams] = useSearchParams();
-  const state = searchParams.get("state") || "";
-  const redirect_uri = searchParams.get("redirect_uri") || "";
-  const nonce = searchParams.get("nonce") || "";
+  const { logos: logosML, enabled: enabledML } = useLoaderData();
+  const [searchParamsML] = useSearchParams();
+  const stateML = searchParamsML.get("state") || "";
+  const redirect_uriML = searchParamsML.get("redirect_uri") || "";
+  const nonceML = searchParamsML.get("nonce") || "";
 
-  const [step, setStep] = useState("email");
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [expiresAt, setExpiresAt] = useState(null);
-  const [cooldownUntil, setCooldownUntil] = useState(null);
-  const [now, setNow] = useState(Date.now());
+  const [stepML, setStepML] = useState("email");
+  const [emailML, setEmailML] = useState("");
+  const [codeML, setCodeML] = useState("");
+  const [expiresAtML, setExpiresAtML] = useState(null);
+  const [cooldownUntilML, setCooldownUntilML] = useState(null);
+  const [nowML, setNowML] = useState(Date.now());
 
-  const sendFetcher = useFetcher();
-  const verifyFetcher = useFetcher();
+  const sendFetcherML = useFetcher();
+  const verifyFetcherML = useFetcher();
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
+    const intervalML = setInterval(() => setNowML(Date.now()), 1000);
+    return () => clearInterval(intervalML);
   }, []);
 
   useEffect(() => {
-    if (sendFetcher.data?.success) {
-      setStep("code");
-      setExpiresAt(Date.now() + sendFetcher.data.expiresInSeconds * 1000);
-      setCooldownUntil(Date.now() + sendFetcher.data.cooldownSeconds * 1000);
+    if (sendFetcherML.data?.success) {
+      setStepML("code");
+      setExpiresAtML(Date.now() + sendFetcherML.data.expiresInSeconds * 1000);
+      setCooldownUntilML(Date.now() + sendFetcherML.data.cooldownSeconds * 1000);
     }
-  }, [sendFetcher.data]);
+  }, [sendFetcherML.data]);
 
-  const socialUrl = (provider) =>
-    `/auth/${provider}?state=${encodeURIComponent(state)}` +
-    `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
-    `&nonce=${encodeURIComponent(nonce)}`;
+  const socialUrlML = (providerML) =>
+    `/auth/${providerML}?state=${encodeURIComponent(stateML)}` +
+    `&redirect_uri=${encodeURIComponent(redirect_uriML)}` +
+    `&nonce=${encodeURIComponent(nonceML)}`;
 
-  const handleSendCode = (e) => {
-    e.preventDefault();
-    sendFetcher.submit(
-      { email, state, redirect_uri, nonce },
+  const handleSendCodeML = (eML) => {
+    eML.preventDefault();
+    sendFetcherML.submit(
+      { email: emailML, state: stateML, redirect_uri: redirect_uriML, nonce: nonceML },
       { method: "POST", action: "/auth/email/send-code" },
     );
   };
 
-  const handleResend = () => {
-    sendFetcher.submit(
-      { email, state, redirect_uri, nonce },
+  const handleResendML = () => {
+    sendFetcherML.submit(
+      { email: emailML, state: stateML, redirect_uri: redirect_uriML, nonce: nonceML },
       { method: "POST", action: "/auth/email/send-code" },
     );
   };
 
-  const handleVerify = (e) => {
-    e.preventDefault();
-    verifyFetcher.submit(
-      { email, code, state, redirect_uri, nonce },
+  const handleVerifyML = (eML) => {
+    eML.preventDefault();
+    verifyFetcherML.submit(
+      { email: emailML, code: codeML, state: stateML, redirect_uri: redirect_uriML, nonce: nonceML },
       { method: "POST", action: "/auth/email/verify-code" },
     );
   };
 
-  const secondsLeft = expiresAt ? Math.max(0, Math.floor((expiresAt - now) / 1000)) : 0;
-  const isExpired = expiresAt && secondsLeft === 0;
-  const cooldownLeft = cooldownUntil ? Math.max(0, Math.floor((cooldownUntil - now) / 1000)) : 0;
-  const canResend = cooldownLeft === 0;
+  const secondsLeftML = expiresAtML ? Math.max(0, Math.floor((expiresAtML - nowML) / 1000)) : 0;
+  const isExpiredML = expiresAtML && secondsLeftML === 0;
+  const cooldownLeftML = cooldownUntilML ? Math.max(0, Math.floor((cooldownUntilML - nowML) / 1000)) : 0;
+  const canResendML = cooldownLeftML === 0;
 
-  const formatTime = (s) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, "0")}`;
+  const formatTimeML = (sML) => {
+    const mML = Math.floor(sML / 60);
+    const secML = sML % 60;
+    return `${mML}:${secML.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.heading}>Login</h1>
+    <div style={stylesML.page}>
+      <div style={stylesML.card}>
+        <h1 style={stylesML.heading}>Login</h1>
 
-        {step === "email" && (
-          <form onSubmit={handleSendCode}>
+        {stepML === "email" && (
+          <form onSubmit={handleSendCodeML}>
             <input
               type="email"
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
+              value={emailML}
+              onChange={(eML) => setEmailML(eML.target.value)}
+              style={stylesML.input}
               required
             />
-            {sendFetcher.data?.error && (
-              <div style={styles.error}>{sendFetcher.data.error}</div>
+            {sendFetcherML.data?.error && (
+              <div style={stylesML.error}>{sendFetcherML.data.error}</div>
             )}
             <button
               type="submit"
-              style={styles.button}
-              disabled={sendFetcher.state !== "idle"}
+              style={stylesML.button}
+              disabled={sendFetcherML.state !== "idle"}
             >
-              {sendFetcher.state !== "idle" ? "Sending..." : "Continue"}
+              {sendFetcherML.state !== "idle" ? "Sending..." : "Continue"}
             </button>
           </form>
         )}
 
-        {step === "code" && (
-          <form onSubmit={handleVerify}>
+        {stepML === "code" && (
+          <form onSubmit={handleVerifyML}>
             <p style={{ fontSize: "14px", color: "#555", marginBottom: "8px" }}>
-              Enter the code sent to {email}
+              Enter the code sent to {emailML}
             </p>
 
-            <p style={{ fontSize: "13px", color: isExpired ? "#d82c0d" : "#888", marginBottom: "16px" }}>
-              {isExpired ? "Code expired." : `Expires in ${formatTime(secondsLeft)}`}
+            <p style={{ fontSize: "13px", color: isExpiredML ? "#d82c0d" : "#888", marginBottom: "16px" }}>
+              {isExpiredML ? "Code expired." : `Expires in ${formatTimeML(secondsLeftML)}`}
             </p>
 
             <input
               type="text"
               placeholder="6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              style={styles.input}
+              value={codeML}
+              onChange={(eML) => setCodeML(eML.target.value)}
+              style={stylesML.input}
               maxLength={6}
-              disabled={isExpired}
+              disabled={isExpiredML}
               required
             />
 
-            {verifyFetcher.data?.error && (
-              <div style={styles.error}>{verifyFetcher.data.error}</div>
+            {verifyFetcherML.data?.error && (
+              <div style={stylesML.error}>{verifyFetcherML.data.error}</div>
             )}
 
             <button
               type="submit"
-              style={styles.button}
-              disabled={verifyFetcher.state !== "idle" || isExpired}
+              style={stylesML.button}
+              disabled={verifyFetcherML.state !== "idle" || isExpiredML}
             >
-              {verifyFetcher.state !== "idle" ? "Verifying..." : "Sign in"}
+              {verifyFetcherML.state !== "idle" ? "Verifying..." : "Sign in"}
             </button>
 
             <button
               type="button"
-              onClick={handleResend}
-              disabled={!canResend || sendFetcher.state !== "idle"}
+              onClick={handleResendML}
+              disabled={!canResendML || sendFetcherML.state !== "idle"}
               style={{
                 background: "none",
                 border: "none",
-                color: canResend ? "#1a1a1a" : "#999",
-                textDecoration: canResend ? "underline" : "none",
-                cursor: canResend ? "pointer" : "default",
+                color: canResendML ? "#1a1a1a" : "#999",
+                textDecoration: canResendML ? "underline" : "none",
+                cursor: canResendML ? "pointer" : "default",
                 fontSize: "13px",
                 marginTop: "8px",
               }}
             >
-              {canResend ? "Resend code" : `Resend in ${cooldownLeft}s`}
+              {canResendML ? "Resend code" : `Resend in ${cooldownLeftML}s`}
             </button>
           </form>
         )}
 
-        <div style={styles.divider}>OR</div>
+        <div style={stylesML.divider}>OR</div>
 
-        <div style={styles.iconRow}>
-          {enabled.google && (
-            <a href={socialUrl("google")} style={styles.iconButton} title="Continue with Google">
-              {logos.google ? (
-                <img src={logos.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} />
+        <div style={stylesML.iconRow}>
+          {enabledML.google && (
+            <a href={socialUrlML("google")} style={stylesML.iconButton} title="Continue with Google">
+              {logosML.google ? (
+                <img src={logosML.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} />
               ) : (
                 <GoogleIcon />
               )}
             </a>
           )}
-          {enabled.linkedin && (
-            <a href={socialUrl("linked")} style={styles.iconButton} title="Continue with LinkedIn">
-              {logos.linkedin ? (
-                <img src={logos.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} />
+          {enabledML.linkedin && (
+            <a href={socialUrlML("linked")} style={stylesML.iconButton} title="Continue with LinkedIn">
+              {logosML.linkedin ? (
+                <img src={logosML.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} />
               ) : (
                 <LinkedInIcon />
               )}
             </a>
           )}
-          {enabled.facebook && (
-            <a href={socialUrl("facebook")} style={styles.iconButton} title="Continue with Facebook">
-              {logos.facebook ? (
-                <img src={logos.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} />
+          {enabledML.facebook && (
+            <a href={socialUrlML("facebook")} style={stylesML.iconButton} title="Continue with Facebook">
+              {logosML.facebook ? (
+                <img src={logosML.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} />
               ) : (
                 <FacebookIcon />
               )}
             </a>
           )}
-          {enabled.twitter && (
-            <a href={socialUrl("twitter")} style={styles.iconButton} title="Continue with X">
-              {logos.twitter ? (
-                <img src={logos.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} />
+          {enabledML.twitter && (
+            <a href={socialUrlML("twitter")} style={stylesML.iconButton} title="Continue with X">
+              {logosML.twitter ? (
+                <img src={logosML.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} />
               ) : (
                 <XIcon />
               )}
             </a>
           )}
-          {enabled.amazon && (
-            <a href={socialUrl("amazon")} style={styles.iconButton} title="Continue with Amazon">
-              {logos.amazon ? (
-                <img src={logos.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} />
+          {enabledML.amazon && (
+            <a href={socialUrlML("amazon")} style={stylesML.iconButton} title="Continue with Amazon">
+              {logosML.amazon ? (
+                <img src={logosML.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} />
               ) : (
                 <AmazonIcon />
               )}

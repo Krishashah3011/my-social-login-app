@@ -4,47 +4,47 @@ import { unauthenticated } from "../shopify.server";
 import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const code = url.searchParams.get("code");
-  const stateData = url.searchParams.get("state");
+  const codeML = urlML.searchParams.get("code");
+  const stateDataML = urlML.searchParams.get("state");
 
-  const host =
-    request.headers.get("x-forwarded-host") || url.host;
+  const hostML =
+    requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrl =
-    `https://${host}/facebook/callback`;
+  const callbackUrlML =
+    `https://${hostML}/facebook/callback`;
 
-  if (!code) {
+  if (!codeML) {
     return new Response("No authorization code received", {
       status: 400,
     });
   }
 
-  if (!stateData) {
+  if (!stateDataML) {
     return new Response("Missing state", {
       status: 400,
     });
   }
 
-  const [state, redirect_uri, nonce] =
-    stateData.split("|");
+  const [stateML, redirect_uriML, nonceML] =
+    stateDataML.split("|");
 
-  const tokenResponse = await fetch(
+  const tokenResponseML = await fetch(
     "https://graph.facebook.com/v23.0/oauth/access_token?" +
       new URLSearchParams({
         client_id: process.env.FACEBOOK_CLIENT_ID,
         client_secret:
           process.env.FACEBOOK_CLIENT_SECRET,
-        redirect_uri: callbackUrl,
-        code,
+        redirect_uri: callbackUrlML,
+        code: codeML,
       })
   );
 
-  const tokens = await tokenResponse.json();
+  const tokensML = await tokenResponseML.json();
 
-  if (!tokens.access_token) {
+  if (!tokensML.access_token) {
     return new Response(
       "Facebook token exchange failed",
       {
@@ -53,33 +53,33 @@ export async function loader({ request }) {
     );
   }
 
-  const userResponse = await fetch(
-    `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${tokens.access_token}`
+  const userResponseML = await fetch(
+    `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${tokensML.access_token}`
   );
 
-  const facebookUser = await userResponse.json();
+  const facebookUserML = await userResponseML.json();
 
-  const shopSession =
+  const shopSessionML =
     await prisma.session.findFirst({
       where: {
         isOnline: false,
       },
     });
 
-  if (!shopSession) {
+  if (!shopSessionML) {
     throw new Error("No Shopify session found");
   }
 
-  const { admin } =
-    await unauthenticated.admin(shopSession.shop);
+  const { admin: adminML } =
+    await unauthenticated.admin(shopSessionML.shop);
 
-  let shopifyCustomerId = null;
+  let shopifyCustomerIdML = null;
 
-  const existingCustomerResponse =
-    await admin.graphql(`
+  const existingCustomerResponseML =
+    await adminML.graphql(`
       #graphql
       query{
-        customers(first:1,query:"email:${facebookUser.email}"){
+        customers(first:1,query:"email:${facebookUserML.email}"){
           edges{
             node{
               id
@@ -90,19 +90,19 @@ export async function loader({ request }) {
       }
     `);
 
-  const existingData =
-    await existingCustomerResponse.json();
+  const existingDataML =
+    await existingCustomerResponseML.json();
 
-  const existingCustomer =
-    existingData.data?.customers?.edges[0]?.node;
+  const existingCustomerML =
+    existingDataML.data?.customers?.edges[0]?.node;
 
-  if (existingCustomer) {
-    shopifyCustomerId =
-      existingCustomer.id;
+  if (existingCustomerML) {
+    shopifyCustomerIdML =
+      existingCustomerML.id;
 
   } else {
-    const customerResponse =
-      await admin.graphql(
+    const customerResponseML =
+      await adminML.graphql(
         `#graphql
         mutation customerCreate($input: CustomerInput!){
           customerCreate(input:$input){
@@ -119,11 +119,11 @@ export async function loader({ request }) {
         {
           variables: {
             input: {
-              email: facebookUser.email,
+              email: facebookUserML.email,
               firstName:
-                facebookUser.name.split(" ")[0],
+                facebookUserML.name.split(" ")[0],
               lastName:
-                facebookUser.name
+                facebookUserML.name
                   .split(" ")
                   .slice(1)
                   .join(" "),
@@ -132,14 +132,14 @@ export async function loader({ request }) {
         }
       );
 
-    const result =
-      await customerResponse.json();
+    const resultML =
+      await customerResponseML.json();
 
-    const customerCreateResult =
-      result.data?.customerCreate;
+    const customerCreateResultML =
+      resultML.data?.customerCreate;
 
     if (
-      customerCreateResult.userErrors.length > 0
+      customerCreateResultML.userErrors.length > 0
     ) {
       return new Response(
         "Customer creation failed",
@@ -149,43 +149,43 @@ export async function loader({ request }) {
       );
     }
 
-    shopifyCustomerId =
-      customerCreateResult.customer.id;
+    shopifyCustomerIdML =
+      customerCreateResultML.customer.id;
   }
 
-  const user =
+  const userML =
     await prisma.facebookUser.upsert({
       where: {
-        email: facebookUser.email,
+        email: facebookUserML.email,
       },
       update: {
-        name: facebookUser.name,
+        name: facebookUserML.name,
         profileImage:
-          facebookUser.picture?.data?.url,
-        shopifyCustomerId,
+          facebookUserML.picture?.data?.url,
+        shopifyCustomerId: shopifyCustomerIdML,
       },
       create: {
-        facebookId: facebookUser.id,
-        name: facebookUser.name,
-        email: facebookUser.email,
+        facebookId: facebookUserML.id,
+        name: facebookUserML.name,
+        email: facebookUserML.email,
         profileImage:
-          facebookUser.picture?.data?.url,
-        shopifyCustomerId,
+          facebookUserML.picture?.data?.url,
+        shopifyCustomerId: shopifyCustomerIdML,
       },
     });
 
-  const authCode =
+  const authCodeML =
     crypto.randomUUID();
 
-  await saveCode(authCode, {
-    email: user.email,
-    name: user.name,
-    id: shopifyCustomerId,
-    nonce,
+  await saveCode(authCodeML, {
+    email: userML.email,
+    name: userML.name,
+    id: shopifyCustomerIdML,
+    nonce: nonceML,
   });
 
   return redirect(
-    `${redirect_uri}?code=${authCode}&state=${state}`
+    `${redirect_uriML}?code=${authCodeML}&state=${stateML}`
   );
 }
 

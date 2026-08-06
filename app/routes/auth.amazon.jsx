@@ -1,38 +1,38 @@
 import db from "../db.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const state = url.searchParams.get("state");
-  const redirect_uri = url.searchParams.get("redirect_uri");
-  const nonce = url.searchParams.get("nonce");
+  const stateML = urlML.searchParams.get("state");
+  const redirect_uriML = urlML.searchParams.get("redirect_uri");
+  const nonceML = urlML.searchParams.get("nonce");
 
-  const shop = process.env.SHOP_DOMAIN;
-  const settings = shop
-    ? await db.shopSettings.findUnique({ where: { shop } })
+  const shopML = process.env.SHOP_DOMAIN;
+  const settingsML = shopML
+    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
     : null;
 
-  if (settings && (!settings.appEnabled || !settings.amazonEnabled)) {
-    const backToSelector =
+  if (settingsML && (!settingsML.appEnabled || !settingsML.amazonEnabled)) {
+    const backToSelectorML =
       `/select-provider?` +
-      `state=${encodeURIComponent(state || "")}` +
-      `&redirect_uri=${encodeURIComponent(redirect_uri || "")}` +
-      `&nonce=${encodeURIComponent(nonce || "")}`;
-    return Response.redirect(new URL(backToSelector, url.origin));
+      `state=${encodeURIComponent(stateML || "")}` +
+      `&redirect_uri=${encodeURIComponent(redirect_uriML || "")}` +
+      `&nonce=${encodeURIComponent(nonceML || "")}`;
+    return Response.redirect(new URL(backToSelectorML, urlML.origin));
   }
 
-  const host = request.headers.get("x-forwarded-host") || url.host;
-  const callbackUrl = `https://${host}/amazon/callback`;
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const callbackUrlML = `https://${hostML}/amazon/callback`;
 
-  const amazonURL =
+  const amazonURLML =
     `https://www.amazon.com/ap/oa?` +
     `client_id=${process.env.AMAZON_CLIENT_ID}` +
-    `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
+    `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=profile` +
-    `&state=${encodeURIComponent(`${state}|${redirect_uri}|${nonce}`)}`;
+    `&state=${encodeURIComponent(`${stateML}|${redirect_uriML}|${nonceML}`)}`;
 
-  return Response.redirect(amazonURL);
+  return Response.redirect(amazonURLML);
 }
 
 export default function AmazonAuth() {

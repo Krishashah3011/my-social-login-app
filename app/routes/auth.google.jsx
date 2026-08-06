@@ -1,43 +1,43 @@
 import db from "../db.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const state = url.searchParams.get("state");
-  const redirect_uri = url.searchParams.get("redirect_uri");
-  const nonce = url.searchParams.get("nonce");
+  const stateML = urlML.searchParams.get("state");
+  const redirect_uriML = urlML.searchParams.get("redirect_uri");
+  const nonceML = urlML.searchParams.get("nonce");
 
-  const shop = process.env.SHOP_DOMAIN;
-  const settings = shop
-    ? await db.shopSettings.findUnique({ where: { shop } })
+  const shopML = process.env.SHOP_DOMAIN;
+  const settingsML = shopML
+    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
     : null;
 
-  if (settings && (!settings.appEnabled || !settings.googleEnabled)) {
-    const backToSelector =
+  if (settingsML && (!settingsML.appEnabled || !settingsML.googleEnabled)) {
+    const backToSelectorML =
       `/select-provider?` +
-      `state=${encodeURIComponent(state || "")}` +
-      `&redirect_uri=${encodeURIComponent(redirect_uri || "")}` +
-      `&nonce=${encodeURIComponent(nonce || "")}`;
-    return Response.redirect(new URL(backToSelector, url.origin));
+      `state=${encodeURIComponent(stateML || "")}` +
+      `&redirect_uri=${encodeURIComponent(redirect_uriML || "")}` +
+      `&nonce=${encodeURIComponent(nonceML || "")}`;
+    return Response.redirect(new URL(backToSelectorML, urlML.origin));
   }
 
-  const host =
-    request.headers.get("x-forwarded-host") || url.host;
+  const hostML =
+    requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrl =
-    `https://${host}/google/callback`;
+  const callbackUrlML =
+    `https://${hostML}/google/callback`;
 
-  const googleURL =
+  const googleURLML =
     `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${process.env.GOOGLE_CLIENT_ID}` +
-    `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
+    `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=email profile openid` +
     `&state=${encodeURIComponent(
-      `${state}|${redirect_uri}|${nonce}`
+      `${stateML}|${redirect_uriML}|${nonceML}`
     )}`;
 
-  return Response.redirect(googleURL);
+  return Response.redirect(googleURLML);
 }
 
 export default function GoogleAuth() {

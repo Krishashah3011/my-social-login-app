@@ -4,25 +4,25 @@ import { Form, useActionData, useLoaderData } from "react-router";
 import { login } from "../../shopify.server";
 import { loginErrorMessage } from "./error.server";
 
-export const loader = async ({ request }) => {
-  const errors = loginErrorMessage(await login(request));
+export const loader = async ({ request: requestML }) => {
+  const errorsML = loginErrorMessage(await login(requestML));
 
-  return { errors };
+  return { errors: errorsML };
 };
 
-export const action = async ({ request }) => {
-  const errors = loginErrorMessage(await login(request));
+export const action = async ({ request: requestML }) => {
+  const errorsML = loginErrorMessage(await login(requestML));
 
   return {
-    errors,
+    errors: errorsML,
   };
 };
 
 export default function Auth() {
-  const loaderData = useLoaderData();
-  const actionData = useActionData();
-  const [shop, setShop] = useState("");
-  const { errors } = actionData || loaderData;
+  const loaderDataML = useLoaderData();
+  const actionDataML = useActionData();
+  const [shopML, setShopML] = useState("");
+  const { errors: errorsML } = actionDataML || loaderDataML;
 
   return (
     <AppProvider embedded={false}>
@@ -33,10 +33,10 @@ export default function Auth() {
               name="shop"
               label="Shop domain"
               details="example.myshopify.com"
-              value={shop}
-              onChange={(e) => setShop(e.currentTarget.value)}
+              value={shopML}
+              onChange={(e) => setShopML(e.currentTarget.value)}
               autocomplete="on"
-              error={errors.shop}
+              error={errorsML.shop}
             ></s-text-field>
             <s-button type="submit">Log in</s-button>
           </s-section>

@@ -2,18 +2,18 @@ import {SignJWT} from "jose";
 import { getKeys } from "../utils/keys.server";
 
 
-export async function createOIDCToken(user){
+export async function createOIDCToken(userML){
 
-const {privateKey}=await getKeys();
+const {privateKey: privateKeyML}=await getKeys();
 
 
 return await new SignJWT({
 
-email:user.email,
+email:userML.email,
 
 email_verified:true,
 
-name:user.name
+name:userML.name
 
 })
 
@@ -33,12 +33,12 @@ process.env.OIDC_ISSUER
 )
 
 .setSubject(
-user.email
+userML.email
 )
 
 .setExpirationTime(
 "5m"
 )
 
-.sign(privateKey);
+.sign(privateKeyML);
 }

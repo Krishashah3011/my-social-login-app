@@ -18,20 +18,20 @@ import {
   Cell,
 } from "recharts";
 
-export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+export const loader = async ({ request: requestML }) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
 
-  let settings = await db.shopSettings.findUnique({
-    where: { shop: session.shop },
+  let settingsML = await db.shopSettings.findUnique({
+    where: { shop: sessionML.shop },
   });
 
-  if (!settings) {
-    settings = await db.shopSettings.create({
-      data: { shop: session.shop },
+  if (!settingsML) {
+    settingsML = await db.shopSettings.create({
+      data: { shop: sessionML.shop },
     });
   }
 
-  const providerList = [
+  const providerListML = [
     { key: "googleEnabled", label: "Google" },
     { key: "linkedinEnabled", label: "LinkedIn" },
     { key: "facebookEnabled", label: "Facebook" },
@@ -39,33 +39,33 @@ export const loader = async ({ request }) => {
     { key: "amazonEnabled", label: "Amazon" },
   ];
 
-  const totalProviders = providerList.length;
-  const enabledCount = providerList.filter((p) => settings[p.key]).length;
-  const allProvidersEnabled = enabledCount === totalProviders;
+  const totalProvidersML = providerListML.length;
+  const enabledCountML = providerListML.filter((pML) => settingsML[pML.key]).length;
+  const allProvidersEnabledML = enabledCountML === totalProvidersML;
 
-  const percentComplete = Math.round(
-    (enabledCount / totalProviders) * 100,
+  const percentCompleteML = Math.round(
+    (enabledCountML / totalProvidersML) * 100,
   );
 
-  const steps = [
+  const stepsML = [
     {
       id: "providers",
       title: "Enable a Login Provider",
       description:
         "Turn on at least one social login provider (Facebook, Linkedin, Google, X or Amazon) in settings.",
-      done: allProvidersEnabled,
-      actionLabel: allProvidersEnabled ? "Completed" : "Complete",
+      done: allProvidersEnabledML,
+      actionLabel: allProvidersEnabledML ? "Completed" : "Complete",
       actionHref: "/app/settings",
     },
   ];
 
   const [
-    googleUsers,
-    linkedUsers,
-    facebookUsers,
-    twitterUsers,
-    amazonUsers,
-    emailVerified,
+    googleUsersML,
+    linkedUsersML,
+    facebookUsersML,
+    twitterUsersML,
+    amazonUsersML,
+    emailVerifiedML,
   ] = await Promise.all([
     db.googleUser.findMany({
       select: { createdAt: true },
@@ -88,107 +88,107 @@ export const loader = async ({ request }) => {
     }),
   ]);
 
-  const totalsByProvider = [
+  const totalsByProviderML = [
     {
       name: "Google",
-      count: googleUsers.length,
+      count: googleUsersML.length,
       color: "#073E74",
     },
     {
       name: "LinkedIn",
-      count: linkedUsers.length,
+      count: linkedUsersML.length,
       color: "#1C5A94",
     },
     {
       name: "Facebook",
-      count: facebookUsers.length,
+      count: facebookUsersML.length,
       color: "#2E73B8",
     },
     {
       name: "X",
-      count: twitterUsers.length,
+      count: twitterUsersML.length,
       color: "#4D90D6",
     },
     {
       name: "Amazon",
-      count: amazonUsers.length,
+      count: amazonUsersML.length,
       color: "#7BAFE5",
     },
     {
       name: "Email",
-      count: emailVerified.length,
+      count: emailVerifiedML.length,
       color: "#96BF47",
     },
   ];
 
-  const days = [];
+  const daysML = [];
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(d.toISOString().slice(0, 10));
+  for (let iML = 6; iML >= 0; iML--) {
+    const dML = new Date();
+    dML.setDate(dML.getDate() - iML);
+    daysML.push(dML.toISOString().slice(0, 10));
   }
 
-  const dayLabel = (isoDate) => {
-    const d = new Date(isoDate);
+  const dayLabelML = (isoDateML) => {
+    const dML = new Date(isoDateML);
 
-    return d.toLocaleDateString("en-US", {
+    return dML.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     });
   };
 
-  const countByDay = (records) => {
-    const map = {};
+  const countByDayML = (recordsML) => {
+    const mapML = {};
 
-    for (const day of days) {
-      map[day] = 0;
+    for (const dayML of daysML) {
+      mapML[dayML] = 0;
     }
 
-    for (const r of records) {
-      const day = r.createdAt.toISOString().slice(0, 10);
+    for (const rML of recordsML) {
+      const dayML = rML.createdAt.toISOString().slice(0, 10);
 
-      if (day in map) {
-        map[day]++;
+      if (dayML in mapML) {
+        mapML[dayML]++;
       }
     }
 
-    return map;
+    return mapML;
   };
 
-  const googleByDay = countByDay(googleUsers);
-  const linkedByDay = countByDay(linkedUsers);
-  const facebookByDay = countByDay(facebookUsers);
-  const twitterByDay = countByDay(twitterUsers);
-  const amazonByDay = countByDay(amazonUsers);
-  const emailByDay = countByDay(emailVerified);
+  const googleByDayML = countByDayML(googleUsersML);
+  const linkedByDayML = countByDayML(linkedUsersML);
+  const facebookByDayML = countByDayML(facebookUsersML);
+  const twitterByDayML = countByDayML(twitterUsersML);
+  const amazonByDayML = countByDayML(amazonUsersML);
+  const emailByDayML = countByDayML(emailVerifiedML);
 
-  const trend = days.map((day) => ({
-    date: dayLabel(day),
-    Google: googleByDay[day],
-    LinkedIn: linkedByDay[day],
-    Facebook: facebookByDay[day],
-    X: twitterByDay[day],
-    Amazon: amazonByDay[day],
-    Email: emailByDay[day],
+  const trendML = daysML.map((dayML) => ({
+    date: dayLabelML(dayML),
+    Google: googleByDayML[dayML],
+    LinkedIn: linkedByDayML[dayML],
+    Facebook: facebookByDayML[dayML],
+    X: twitterByDayML[dayML],
+    Amazon: amazonByDayML[dayML],
+    Email: emailByDayML[dayML],
   }));
 
   return {
-    settings,
-    steps,
-    percentComplete,
-    totalsByProvider,
-    trend,
+    settings: settingsML,
+    steps: stepsML,
+    percentComplete: percentCompleteML,
+    totalsByProvider: totalsByProviderML,
+    trend: trendML,
   };
 };
 
-const BLUE = "#073E74";
-const BORDER = "#E5E5E5";
-const DIVIDER = "#DBDBDB";
-const TEXT_BLACK = "#000000";
-const TEXT_MUTED = "#373737";
+const BLUE_ML = "#073E74";
+const BORDER_ML = "#E5E5E5";
+const DIVIDER_ML = "#DBDBDB";
+const TEXT_BLACK_ML = "#000000";
+const TEXT_MUTED_ML = "#373737";
 
-const BAR_COLORS = [
+const BAR_COLORS_ML = [
   "#073E74",
   "#0D4D8C",
   "#1C5A94",
@@ -197,7 +197,7 @@ const BAR_COLORS = [
   "#96BF47",
 ];
 
-const LINE_COLORS = {
+const LINE_COLORS_ML = {
   Google: "#073E74",
   LinkedIn: "#0D4D8C",
   Facebook: "#1C5A94",
@@ -206,11 +206,11 @@ const LINE_COLORS = {
   Email: "#96BF47",
 };
 
-const styles = {
+const stylesML = {
 
   card: {
     background: "#FFFFFF",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     padding: "16px",
     display: "flex",
@@ -225,13 +225,13 @@ const styles = {
     fontSize: "18px",
     lineHeight: "22px",
     letterSpacing: "0.02em",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
 
   divider: {
     border: "none",
-    borderTop: `1px solid ${DIVIDER}`,
+    borderTop: `1px solid ${DIVIDER_ML}`,
     margin: 0,
     width: "100%",
   },
@@ -241,7 +241,7 @@ const styles = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     marginBottom: "4px",
   },
 
@@ -249,15 +249,15 @@ const styles = {
     width: "100%",
     height: "6px",
     borderRadius: "100px",
-    background: DIVIDER,
+    background: DIVIDER_ML,
     overflow: "hidden",
   },
 
-  progressFill: (percent) => ({
-    width: `${percent}%`,
+  progressFill: (percentML) => ({
+    width: `${percentML}%`,
     height: "100%",
     borderRadius: "100px",
-    background: BLUE,
+    background: BLUE_ML,
     transition: "width 0.3s ease",
   }),
 
@@ -274,7 +274,7 @@ const styles = {
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
-    color: TEXT_BLACK,
+    color: TEXT_BLACK_ML,
     margin: 0,
   },
 
@@ -283,14 +283,14 @@ const styles = {
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     margin: "4px 0 0",
     maxWidth: "606px",
   },
 
   stepButton: {
     padding: "10px",
-    background: BLUE,
+    background: BLUE_ML,
     borderRadius: "10px",
     color: "#FFFFFF",
     fontFamily: "Inter, sans-serif",
@@ -328,10 +328,10 @@ const styles = {
 
 export default function Index() {
   const {
-    steps,
-    percentComplete,
-    totalsByProvider,
-    trend,
+    steps: stepsML,
+    percentComplete: percentCompleteML,
+    totalsByProvider: totalsByProviderML,
+    trend: trendML,
   } = useLoaderData();
 
   return (
@@ -341,62 +341,62 @@ export default function Index() {
       <img
         src="/banner.png"
         alt="Welcome to Milople Social Login App"
-        style={styles.heroBanner}
+        style={stylesML.heroBanner}
       />
 
-      <div style={styles.card}>
-        <h2 style={styles.sectionHeading}>
+      <div style={stylesML.card}>
+        <h2 style={stylesML.sectionHeading}>
           Your Setup Progress
         </h2>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
         <div>
-          <div style={styles.progressLabel}>
-            {percentComplete}% Complete
+          <div style={stylesML.progressLabel}>
+            {percentCompleteML}% Complete
           </div>
 
-          <div style={styles.progressTrack}>
+          <div style={stylesML.progressTrack}>
             <div
-              style={styles.progressFill(percentComplete)}
+              style={stylesML.progressFill(percentCompleteML)}
             />
           </div>
         </div>
       </div>
 
-      <div style={styles.card}>
-        <h2 style={styles.sectionHeading}>
+      <div style={stylesML.card}>
+        <h2 style={stylesML.sectionHeading}>
           Required Setup Steps
         </h2>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        {steps.map((step) => (
+        {stepsML.map((stepML) => (
           <div
-            key={step.id}
-            style={styles.stepRow}
+            key={stepML.id}
+            style={stylesML.stepRow}
           >
             <div>
-              <p style={styles.stepTitle}>
-                {step.title}
+              <p style={stylesML.stepTitle}>
+                {stepML.title}
               </p>
 
-              <p style={styles.stepDescription}>
-                {step.description}
+              <p style={stylesML.stepDescription}>
+                {stepML.description}
               </p>
             </div>
 
-            {step.done ? (
-              <span style={styles.stepDonePill}>
-                {step.actionLabel}
+            {stepML.done ? (
+              <span style={stylesML.stepDonePill}>
+                {stepML.actionLabel}
               </span>
             ) : (
               <Link
-                to={step.actionHref}
+                to={stepML.actionHref}
                 style={{ textDecoration: "none" }}
               >
-                <button style={styles.stepButton}>
-                  {step.actionLabel}
+                <button style={stylesML.stepButton}>
+                  {stepML.actionLabel}
                 </button>
               </Link>
             )}
@@ -404,17 +404,17 @@ export default function Index() {
         ))}
       </div>
 
-      <div style={styles.card}>
-        <h2 style={styles.sectionHeading}>
+      <div style={stylesML.card}>
+        <h2 style={stylesML.sectionHeading}>
           Logins by Provider
         </h2>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        <div style={styles.chartContainer}>
+        <div style={stylesML.chartContainer}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={totalsByProvider}
+              data={totalsByProviderML}
               margin={{
                 top: 10,
                 right: 20,
@@ -450,10 +450,10 @@ export default function Index() {
                 dataKey="count"
                 radius={[6, 6, 0, 0]}
               >
-                {totalsByProvider.map((entry, index) => (
+                {totalsByProviderML.map((entryML, indexML) => (
                   <Cell
-                    key={index}
-                    fill={BAR_COLORS[index]}
+                    key={indexML}
+                    fill={BAR_COLORS_ML[indexML]}
                   />
                 ))}
               </Bar>
@@ -462,17 +462,17 @@ export default function Index() {
         </div>
       </div>
 
-      <div style={styles.card}>
-        <h2 style={styles.sectionHeading}>
+      <div style={stylesML.card}>
+        <h2 style={stylesML.sectionHeading}>
           Logins in Last 7 Days
         </h2>
 
-        <hr style={styles.divider} />
+        <hr style={stylesML.divider} />
 
-        <div style={styles.chartContainer}>
+        <div style={stylesML.chartContainer}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={trend}
+              data={trendML}
               margin={{
                 top: 10,
                 right: 20,
@@ -510,12 +510,12 @@ export default function Index() {
                 }}
               />
 
-              {Object.keys(LINE_COLORS).map((provider) => (
+              {Object.keys(LINE_COLORS_ML).map((providerML) => (
                 <Line
-                  key={provider}
+                  key={providerML}
                   type="monotone"
-                  dataKey={provider}
-                  stroke={LINE_COLORS[provider]}
+                  dataKey={providerML}
+                  stroke={LINE_COLORS_ML[providerML]}
                   strokeWidth={2.5}
                   dot={{ r: 3 }}
                   activeDot={{ r: 6 }}
@@ -529,6 +529,6 @@ export default function Index() {
   );
 }
 
-export const headers = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

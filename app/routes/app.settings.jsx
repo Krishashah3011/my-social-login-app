@@ -6,57 +6,57 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
 
-const BLUE = "#073E74";
-const GRAY_OFF = "#707072";
-const BORDER = "#DBDBDB";
-const LICENSE_BG = "#EDEDED";
-const LICENSE_BORDER = "#E9E9EA";
-const TEXT_DARK = "#000000";
-const TEXT_MUTED = "#373737";
+const BLUE_ML = "#073E74";
+const GRAY_OFF_ML = "#707072";
+const BORDER_ML = "#DBDBDB";
+const LICENSE_BG_ML = "#EDEDED";
+const LICENSE_BORDER_ML = "#E9E9EA";
+const TEXT_DARK_ML = "#000000";
+const TEXT_MUTED_ML = "#373737";
 
-function generateSerialKey() {
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `SER-${Date.now()}-${rand}`;
+function generateSerialKeyML() {
+  const randML = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `SER-${Date.now()}-${randML}`;
 }
 
-export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+export const loader = async ({ request: requestML }) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
 
-  let settings = await db.shopSettings.findUnique({
-    where: { shop: session.shop },
+  let settingsML = await db.shopSettings.findUnique({
+    where: { shop: sessionML.shop },
   });
 
-  if (!settings) {
-    settings = await db.shopSettings.create({
-      data: { shop: session.shop, serialKey: generateSerialKey() },
+  if (!settingsML) {
+    settingsML = await db.shopSettings.create({
+      data: { shop: sessionML.shop, serialKey: generateSerialKeyML() },
     });
-  } else if (!settings.serialKey) {
-    settings = await db.shopSettings.update({
-      where: { shop: session.shop },
-      data: { serialKey: generateSerialKey() },
+  } else if (!settingsML.serialKey) {
+    settingsML = await db.shopSettings.update({
+      where: { shop: sessionML.shop },
+      data: { serialKey: generateSerialKeyML() },
     });
   }
 
-  return { settings };
+  return { settings: settingsML };
 };
 
-export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
+export const action = async ({ request: requestML }) => {
+  const { session: sessionML } = await authenticate.admin(requestML);
+  const formDataML = await requestML.formData();
 
-  const updated = await db.shopSettings.update({
-    where: { shop: session.shop },
+  const updatedML = await db.shopSettings.update({
+    where: { shop: sessionML.shop },
     data: {
-      appEnabled: formData.get("appEnabled") === "true",
-      googleEnabled: formData.get("googleEnabled") === "true",
-      twitterEnabled: formData.get("twitterEnabled") === "true",
-      facebookEnabled: formData.get("facebookEnabled") === "true",
-      linkedinEnabled: formData.get("linkedinEnabled") === "true",
-      amazonEnabled: formData.get("amazonEnabled") === "true",
+      appEnabled: formDataML.get("appEnabled") === "true",
+      googleEnabled: formDataML.get("googleEnabled") === "true",
+      twitterEnabled: formDataML.get("twitterEnabled") === "true",
+      facebookEnabled: formDataML.get("facebookEnabled") === "true",
+      linkedinEnabled: formDataML.get("linkedinEnabled") === "true",
+      amazonEnabled: formDataML.get("amazonEnabled") === "true",
     },
   });
 
-  return { settings: updated };
+  return { settings: updatedML };
 };
 
 function GoogleIcon() {
@@ -128,7 +128,7 @@ function AmazonIcon() {
   );
 }
 
-const DEFAULT_ICONS = {
+const DEFAULT_ICONS_ML = {
   google: GoogleIcon,
   linkedin: LinkedInIcon,
   facebook: FacebookIcon,
@@ -160,7 +160,7 @@ function ToggleSwitch({ checked, onChange, disabled }) {
         border: "none",
         padding: 0,
         position: "relative",
-        background: checked ? BLUE : GRAY_OFF,
+        background: checked ? BLUE_ML : GRAY_OFF_ML,
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
         transition: "background 0.15s ease",
@@ -183,9 +183,9 @@ function ToggleSwitch({ checked, onChange, disabled }) {
   );
 }
 
-const styles = {
+const stylesML = {
   outerCard: {
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     background: "#fff",
     padding: "16px",
@@ -201,7 +201,7 @@ const styles = {
     fontWeight: 600,
     fontSize: "18px",
     letterSpacing: "0.02em",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
     margin: 0,
   },
   subtitleRow: {
@@ -213,10 +213,10 @@ const styles = {
   subtitleText: {
     fontFamily: "Inter, sans-serif",
     fontSize: "12px",
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   innerCard: {
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "8px",
     background: "#fff",
     padding: "16px",
@@ -229,19 +229,19 @@ const styles = {
     flexDirection: "column",
     gap: "12px",
     padding: "10px",
-    background: LICENSE_BG,
-    border: `1px solid ${LICENSE_BORDER}`,
+    background: LICENSE_BG_ML,
+    border: `1px solid ${LICENSE_BORDER_ML}`,
     borderRadius: "4px",
   },
   licenseTitle: {
     fontFamily: "Inter, sans-serif",
     fontSize: "16px",
     fontWeight: 500,
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   divider: {
     border: "none",
-    borderTop: `1px solid ${BORDER}`,
+    borderTop: `1px solid ${BORDER_ML}`,
     margin: 0,
   },
   rowBetween: {
@@ -253,13 +253,13 @@ const styles = {
     fontFamily: "Inter, sans-serif",
     fontSize: "14px",
     fontWeight: 500,
-    color: TEXT_DARK,
+    color: TEXT_DARK_ML,
   },
   subLabel: {
     fontFamily: "Inter, sans-serif",
     fontSize: "12px",
     fontWeight: 400,
-    color: TEXT_MUTED,
+    color: TEXT_MUTED_ML,
     marginTop: "4px",
   },
   serialPill: {
@@ -273,7 +273,7 @@ const styles = {
   },
   providersBox: {
     background: "#fff",
-    border: `1px solid ${BORDER}`,
+    border: `1px solid ${BORDER_ML}`,
     borderRadius: "4px",
     padding: "10px 10px 13px",
   },
@@ -319,70 +319,70 @@ const styles = {
     height: "16px",
     fontSize: "13px",
     lineHeight: 1,
-    color: GRAY_OFF,
+    color: GRAY_OFF_ML,
     cursor: "pointer",
     userSelect: "none",
   },
 };
 
-function saveWrapperStyle(disabled) {
+function saveWrapperStyleML(disabledML) {
   return {
     display: "inline-flex",
     padding: "2px",
     borderRadius: "8px",
-    background: disabled
+    background: disabledML
       ? "linear-gradient(180deg, #9a9a9a 0%, #6f6f6f 100%)"
       : "linear-gradient(180deg, #2A2A2A 0%, #000000 100%)",
   };
 }
 
-function saveButtonStyle(disabled) {
+function saveButtonStyleML(disabledML) {
   return {
     padding: "8px 24px",
     borderRadius: "6px",
-    border: `1px solid ${disabled ? "#7a7a7a" : "#353535"}`,
-    background: disabled
+    border: `1px solid ${disabledML ? "#7a7a7a" : "#353535"}`,
+    background: disabledML
       ? "linear-gradient(180deg, #a8a8a8 0%, #7d7d7d 100%)"
       : "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
     color: "#fff",
     fontFamily: "Inter, sans-serif",
     fontWeight: 600,
     fontSize: "16px",
-    cursor: disabled ? "default" : "pointer",
+    cursor: disabledML ? "default" : "pointer",
   };
 }
 
 function LogoUploadButton({ providerKey, enabled, hasCustomLogo }) {
-  const uploadFetcher = useFetcher();
-  const resetFetcher = useFetcher();
+  const uploadFetcherML = useFetcher();
+  const resetFetcherML = useFetcher();
 
-  const isUploading = uploadFetcher.state !== "idle";
-  const isResetting = resetFetcher.state !== "idle";
-  const disabled = !enabled || isUploading;
+  const isUploadingML = uploadFetcherML.state !== "idle";
+  const isResettingML = resetFetcherML.state !== "idle";
+  const disabledML = !enabled || isUploadingML;
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChangeML = (eML) => {
+    const fileML = eML.target.files?.[0];
+    if (!fileML) return;
 
-    const formData = new FormData();
-    formData.set("provider", providerKey);
-    formData.set("file", file);
+    const formDataML = new FormData();
+    formDataML.set("provider", providerKey);
+    formDataML.set("file", fileML);
 
-    uploadFetcher.submit(formData, {
+    uploadFetcherML.submit(formDataML, {
       method: "POST",
       action: "/app/settings/upload-logo",
       encType: "multipart/form-data",
     });
 
-    e.target.value = "";
+    eML.target.value = "";
   };
 
-  const handleReset = () => {
-    const formData = new FormData();
-    formData.set("provider", providerKey);
-    formData.set("intent", "reset");
+  const handleResetML = () => {
+    const formDataML = new FormData();
+    formDataML.set("provider", providerKey);
+    formDataML.set("intent", "reset");
 
-    resetFetcher.submit(formData, {
+    resetFetcherML.submit(formDataML, {
       method: "POST",
       action: "/app/settings/upload-logo",
     });
@@ -392,8 +392,8 @@ function LogoUploadButton({ providerKey, enabled, hasCustomLogo }) {
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
       {hasCustomLogo && enabled && (
         <span
-          style={{ ...styles.resetBtn, opacity: isResetting ? 0.5 : 1 }}
-          onClick={isResetting ? undefined : handleReset}
+          style={{ ...stylesML.resetBtn, opacity: isResettingML ? 0.5 : 1 }}
+          onClick={isResettingML ? undefined : handleResetML}
           title="Reset to default logo"
         >
           ✕
@@ -401,9 +401,9 @@ function LogoUploadButton({ providerKey, enabled, hasCustomLogo }) {
       )}
       <label
         style={{
-          ...styles.uploadIconBtn,
-          opacity: disabled ? 0.4 : 1,
-          cursor: disabled ? "default" : "pointer",
+          ...stylesML.uploadIconBtn,
+          opacity: disabledML ? 0.4 : 1,
+          cursor: disabledML ? "default" : "pointer",
         }}
         title={enabled ? "Upload new logo (PNG, JPG or SVG)" : "Enable this provider to customize its logo"}
       >
@@ -411,8 +411,8 @@ function LogoUploadButton({ providerKey, enabled, hasCustomLogo }) {
         <input
           type="file"
           accept="image/png,image/jpeg,image/svg+xml"
-          onChange={handleFileChange}
-          disabled={disabled}
+          onChange={handleFileChangeML}
+          disabled={disabledML}
           style={{ display: "none" }}
         />
       </label>
@@ -421,21 +421,21 @@ function LogoUploadButton({ providerKey, enabled, hasCustomLogo }) {
 }
 
 function ProviderRow({ providerKey, name, subtitle, checked, onToggle, logoUrl }) {
-  const DefaultIcon = DEFAULT_ICONS[providerKey];
+  const DefaultIconML = DEFAULT_ICONS_ML[providerKey];
 
   return (
-    <div style={styles.providerRow}>
-      <div style={styles.providerLeft}>
-        <div style={styles.logoPreview}>
+    <div style={stylesML.providerRow}>
+      <div style={stylesML.providerLeft}>
+        <div style={stylesML.logoPreview}>
           {logoUrl ? (
-            <img src={logoUrl} alt={`${name} logo`} style={styles.logoPreviewImg} />
+            <img src={logoUrl} alt={`${name} logo`} style={stylesML.logoPreviewImg} />
           ) : (
-            <DefaultIcon />
+            <DefaultIconML />
           )}
         </div>
         <div>
-          <div style={styles.label}>{name}</div>
-          {subtitle && <div style={styles.subLabel}>{subtitle}</div>}
+          <div style={stylesML.label}>{name}</div>
+          {subtitle && <div style={stylesML.subLabel}>{subtitle}</div>}
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -447,7 +447,7 @@ function ProviderRow({ providerKey, name, subtitle, checked, onToggle, logoUrl }
 }
 
 function LoginPreviewModal({ values, settings, onClose }) {
-  const logos = {
+  const logosML = {
     google: settings.googleLogo,
     linkedin: settings.linkedinLogo,
     facebook: settings.facebookLogo,
@@ -455,7 +455,7 @@ function LoginPreviewModal({ values, settings, onClose }) {
     amazon: settings.amazonLogo,
   };
 
-  const previewIconStyle = {
+  const previewIconStyleML = {
     width: "44px",
     height: "44px",
     borderRadius: "50%",
@@ -489,7 +489,7 @@ function LoginPreviewModal({ values, settings, onClose }) {
           textAlign: "center",
           position: "relative",
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(eML) => eML.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -524,28 +524,28 @@ function LoginPreviewModal({ values, settings, onClose }) {
 
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "14px" }}>
           {values.googleEnabled && (
-            <div style={previewIconStyle} title="Google">
-              {logos.google ? <img src={logos.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} /> : <GoogleIcon />}
+            <div style={previewIconStyleML} title="Google">
+              {logosML.google ? <img src={logosML.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} /> : <GoogleIcon />}
             </div>
           )}
           {values.linkedinEnabled && (
-            <div style={previewIconStyle} title="LinkedIn">
-              {logos.linkedin ? <img src={logos.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} /> : <LinkedInIcon />}
+            <div style={previewIconStyleML} title="LinkedIn">
+              {logosML.linkedin ? <img src={logosML.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} /> : <LinkedInIcon />}
             </div>
           )}
           {values.facebookEnabled && (
-            <div style={previewIconStyle} title="Facebook">
-              {logos.facebook ? <img src={logos.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} /> : <FacebookIcon />}
+            <div style={previewIconStyleML} title="Facebook">
+              {logosML.facebook ? <img src={logosML.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} /> : <FacebookIcon />}
             </div>
           )}
           {values.twitterEnabled && (
-            <div style={previewIconStyle} title="X (Twitter)">
-              {logos.twitter ? <img src={logos.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} /> : <XIcon />}
+            <div style={previewIconStyleML} title="X (Twitter)">
+              {logosML.twitter ? <img src={logosML.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} /> : <XIcon />}
             </div>
           )}
           {values.amazonEnabled && (
-            <div style={previewIconStyle} title="Amazon">
-              {logos.amazon ? <img src={logos.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} /> : <AmazonIcon />}
+            <div style={previewIconStyleML} title="Amazon">
+              {logosML.amazon ? <img src={logosML.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} /> : <AmazonIcon />}
             </div>
           )}
         </div>
@@ -561,152 +561,152 @@ function LoginPreviewModal({ values, settings, onClose }) {
 }
 
 export default function Settings() {
-  const { settings } = useLoaderData();
-  const fetcher = useFetcher();
-  const shopify = useAppBridge();
-  const [showPreview, setShowPreview] = useState(false);
+  const { settings: settingsML } = useLoaderData();
+  const fetcherML = useFetcher();
+  const shopifyML = useAppBridge();
+  const [showPreviewML, setShowPreviewML] = useState(false);
 
-  const [values, setValues] = useState({
-    appEnabled: settings.appEnabled,
-    googleEnabled: settings.googleEnabled,
-    twitterEnabled: settings.twitterEnabled,
-    facebookEnabled: settings.facebookEnabled,
-    linkedinEnabled: settings.linkedinEnabled,
-    amazonEnabled: settings.amazonEnabled,
+  const [valuesML, setValuesML] = useState({
+    appEnabled: settingsML.appEnabled,
+    googleEnabled: settingsML.googleEnabled,
+    twitterEnabled: settingsML.twitterEnabled,
+    facebookEnabled: settingsML.facebookEnabled,
+    linkedinEnabled: settingsML.linkedinEnabled,
+    amazonEnabled: settingsML.amazonEnabled,
   });
 
-  const isDirty = Object.keys(values).some((key) => values[key] !== settings[key]);
-  const isSaving = fetcher.state !== "idle";
+  const isDirtyML = Object.keys(valuesML).some((keyML) => valuesML[keyML] !== settingsML[keyML]);
+  const isSavingML = fetcherML.state !== "idle";
 
   useEffect(() => {
-    if (fetcher.data?.settings) {
-      shopify.toast.show("Settings saved");
+    if (fetcherML.data?.settings) {
+      shopifyML.toast.show("Settings saved");
     }
-  }, [fetcher.data, shopify]);
+  }, [fetcherML.data, shopifyML]);
 
-  const toggle = (key) => {
-    setValues((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleML = (keyML) => {
+    setValuesML((prevML) => ({ ...prevML, [keyML]: !prevML[keyML] }));
   };
 
-  const handleSave = () => {
-    const formData = new FormData();
-    Object.entries(values).forEach(([key, val]) => formData.set(key, String(val)));
-    fetcher.submit(formData, { method: "POST" });
+  const handleSaveML = () => {
+    const formDataML = new FormData();
+    Object.entries(valuesML).forEach(([keyML, valML]) => formDataML.set(keyML, String(valML)));
+    fetcherML.submit(formDataML, { method: "POST" });
   };
 
   return (
     <s-page>
       <TopIconNav active="settings" />
 
-      <div style={styles.outerCard}>
-        <div style={styles.headerRow}>
+      <div style={stylesML.outerCard}>
+        <div style={stylesML.headerRow}>
           <div>
-            <h1 style={styles.heading}>Configurations</h1>
+            <h1 style={stylesML.heading}>Configurations</h1>
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
-            <div style={saveWrapperStyle(false)}>
+            <div style={saveWrapperStyleML(false)}>
               <button
-                style={saveButtonStyle(false)}
-                onClick={() => setShowPreview(true)}
+                style={saveButtonStyleML(false)}
+                onClick={() => setShowPreviewML(true)}
               >
                 Login Preview
               </button>
             </div>
-            <div style={saveWrapperStyle(!isDirty || isSaving)}>
+            <div style={saveWrapperStyleML(!isDirtyML || isSavingML)}>
               <button
-                style={saveButtonStyle(!isDirty || isSaving)}
-                disabled={!isDirty || isSaving}
-                onClick={handleSave}
+                style={saveButtonStyleML(!isDirtyML || isSavingML)}
+                disabled={!isDirtyML || isSavingML}
+                onClick={handleSaveML}
               >
-                {isSaving ? "Saving..." : "Save Settings"}
+                {isSavingML ? "Saving..." : "Save Settings"}
               </button>
             </div>
           </div>
         </div>
 
-        <div style={styles.innerCard}>
-          <div style={styles.licenseBox}>
-            <div style={styles.licenseTitle}>License and Status</div>
-            <hr style={styles.divider} />
+        <div style={stylesML.innerCard}>
+          <div style={stylesML.licenseBox}>
+            <div style={stylesML.licenseTitle}>License and Status</div>
+            <hr style={stylesML.divider} />
 
-            <div style={styles.rowBetween}>
-              <div style={styles.label}>Serial Key</div>
-              <div style={styles.serialPill}>{settings.serialKey}</div>
+            <div style={stylesML.rowBetween}>
+              <div style={stylesML.label}>Serial Key</div>
+              <div style={stylesML.serialPill}>{settingsML.serialKey}</div>
             </div>
-            <hr style={styles.divider} />
+            <hr style={stylesML.divider} />
 
-            <div style={styles.rowBetween}>
+            <div style={stylesML.rowBetween}>
               <div>
-                <div style={styles.label}>Status</div>
-                <div style={styles.subLabel}>
+                <div style={stylesML.label}>Status</div>
+                <div style={stylesML.subLabel}>
                   Enable or disable the app globally. When disabled, no recommendations will be
                   shown on your store.
                 </div>
               </div>
-              <ToggleSwitch checked={values.appEnabled} onChange={() => toggle("appEnabled")} />
+              <ToggleSwitch checked={valuesML.appEnabled} onChange={() => toggleML("appEnabled")} />
             </div>
           </div>
 
-          <div style={styles.providersBox}>
+          <div style={stylesML.providersBox}>
             <ProviderRow
               providerKey="google"
               name="Google"
               subtitle="Continue with Google"
-              checked={values.googleEnabled}
-              onToggle={() => toggle("googleEnabled")}
-              logoUrl={settings.googleLogo}
+              checked={valuesML.googleEnabled}
+              onToggle={() => toggleML("googleEnabled")}
+              logoUrl={settingsML.googleLogo}
             />
-            <hr style={styles.divider} />
+            <hr style={stylesML.divider} />
             <ProviderRow
               providerKey="linkedin"
               name="Linkedin"
               subtitle="Continue with Linkedin"
-              checked={values.linkedinEnabled}
-              onToggle={() => toggle("linkedinEnabled")}
-              logoUrl={settings.linkedinLogo}
+              checked={valuesML.linkedinEnabled}
+              onToggle={() => toggleML("linkedinEnabled")}
+              logoUrl={settingsML.linkedinLogo}
             />
-            <hr style={styles.divider} />
+            <hr style={stylesML.divider} />
             <ProviderRow
               providerKey="facebook"
               name="Facebook"
               subtitle="Continue with Facebook"
-              checked={values.facebookEnabled}
-              onToggle={() => toggle("facebookEnabled")}
-              logoUrl={settings.facebookLogo}
+              checked={valuesML.facebookEnabled}
+              onToggle={() => toggleML("facebookEnabled")}
+              logoUrl={settingsML.facebookLogo}
             />
-            <hr style={styles.divider} />
+            <hr style={stylesML.divider} />
             <ProviderRow
               providerKey="twitter"
               name="X (Twitter)"
               subtitle="Continue with Twitter"
-              checked={values.twitterEnabled}
-              onToggle={() => toggle("twitterEnabled")}
-              logoUrl={settings.twitterLogo}
+              checked={valuesML.twitterEnabled}
+              onToggle={() => toggleML("twitterEnabled")}
+              logoUrl={settingsML.twitterLogo}
             />
-            <hr style={styles.divider} />
+            <hr style={stylesML.divider} />
             <ProviderRow
               providerKey="amazon"
               name="Amazon"
               subtitle="Continue with Amazon"
-              checked={values.amazonEnabled}
-              onToggle={() => toggle("amazonEnabled")}
-              logoUrl={settings.amazonLogo}
+              checked={valuesML.amazonEnabled}
+              onToggle={() => toggleML("amazonEnabled")}
+              logoUrl={settingsML.amazonLogo}
             />
           </div>
         </div>
       </div>
 
-      {showPreview && (
+      {showPreviewML && (
         <LoginPreviewModal
-          values={values}
-          settings={settings}
-          onClose={() => setShowPreview(false)}
+          values={valuesML}
+          settings={settingsML}
+          onClose={() => setShowPreviewML(false)}
         />
       )}
     </s-page>
   );
 }
 
-export const headers = (headersArgs) => {
-  return boundary.headers(headersArgs);
+export const headers = (headersArgsML) => {
+  return boundary.headers(headersArgsML);
 };

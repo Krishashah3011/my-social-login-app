@@ -5,34 +5,34 @@ import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const code = url.searchParams.get("code");
-  const stateData = url.searchParams.get("state");
+  const codeML = urlML.searchParams.get("code");
+  const stateDataML = urlML.searchParams.get("state");
 
-  const host =
-    request.headers.get("x-forwarded-host") || url.host;
+  const hostML =
+    requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrl =
-    `https://${host}/linked/callback`;
+  const callbackUrlML =
+    `https://${hostML}/linked/callback`;
 
-  if (!code) {
+  if (!codeML) {
     return new Response("No authorization code received", {
       status: 400,
     });
   }
 
-  if (!stateData) {
+  if (!stateDataML) {
     return new Response("Missing state", {
       status: 400,
     });
   }
 
-  const [state, redirect_uri, nonce] =
-    stateData.split("|");
+  const [stateML, redirect_uriML, nonceML] =
+    stateDataML.split("|");
 
-  const tokenResponse = await fetch(
+  const tokenResponseML = await fetch(
     "https://www.linkedin.com/oauth/v2/accessToken",
     {
       method: "POST",
@@ -42,16 +42,16 @@ export async function loader({ request }) {
       body: new URLSearchParams({
         client_id: process.env.linked_CLIENT_ID,
         client_secret: process.env.linked_CLIENT_SECRET,
-        code,
+        code: codeML,
         grant_type: "authorization_code",
-        redirect_uri: callbackUrl,
+        redirect_uri: callbackUrlML,
       }),
     }
   );
 
-  const tokens = await tokenResponse.json();
+  const tokensML = await tokenResponseML.json();
 
-  if (!tokens.access_token) {
+  if (!tokensML.access_token) {
     return new Response(
       "linked token exchange failed",
       {
@@ -60,36 +60,36 @@ export async function loader({ request }) {
     );
   }
 
-  const userResponse = await fetch(
+  const userResponseML = await fetch(
     "https://api.linkedin.com/v2/userinfo",
     {
       headers: {
-        Authorization: `Bearer ${tokens.access_token}`,
+        Authorization: `Bearer ${tokensML.access_token}`,
       },
     }
   );
 
-  const linkedUser = await userResponse.json();
-  const shopSession = await prisma.session.findFirst({
+  const linkedUserML = await userResponseML.json();
+  const shopSessionML = await prisma.session.findFirst({
     where: { isOnline: false },
   });
 
-  if (!shopSession) {
+  if (!shopSessionML) {
     throw new Error("No Shopify session found");
   }
 
-  const { admin } =
+  const { admin: adminML } =
     await unauthenticated.admin(
-      shopSession.shop
+      shopSessionML.shop
     );
 
-  let shopifyCustomerId = null;
+  let shopifyCustomerIdML = null;
 
-  const existingCustomerResponse =
-    await admin.graphql(
+  const existingCustomerResponseML =
+    await adminML.graphql(
       `#graphql
       query {
-        customers(first:1, query:"email:${linkedUser.email}") {
+        customers(first:1, query:"email:${linkedUserML.email}") {
           edges {
             node {
               id
@@ -100,21 +100,21 @@ export async function loader({ request }) {
       }`
     );
 
-  const existingData =
-    await existingCustomerResponse.json();
+  const existingDataML =
+    await existingCustomerResponseML.json();
 
-  const existingCustomer =
-    existingData.data?.customers?.edges[0]?.node;
+  const existingCustomerML =
+    existingDataML.data?.customers?.edges[0]?.node;
 
-  if (existingCustomer) {
+  if (existingCustomerML) {
 
-    shopifyCustomerId =
-      existingCustomer.id;
+    shopifyCustomerIdML =
+      existingCustomerML.id;
 
   } else {
 
-    const customerResponse =
-      await admin.graphql(
+    const customerResponseML =
+      await adminML.graphql(
         `#graphql
         mutation customerCreate($input: CustomerInput!) {
           customerCreate(input:$input){
@@ -131,23 +131,23 @@ export async function loader({ request }) {
         {
           variables: {
             input: {
-              email: linkedUser.email,
+              email: linkedUserML.email,
               firstName:
-                linkedUser.given_name || "",
+                linkedUserML.given_name || "",
               lastName:
-                linkedUser.family_name || "",
+                linkedUserML.family_name || "",
             },
           },
         }
       );
 
-    const result =
-      await customerResponse.json();
+    const resultML =
+      await customerResponseML.json();
 
-    const customerCreateResult =
-      result.data?.customerCreate;
+    const customerCreateResultML =
+      resultML.data?.customerCreate;
 
-    if (!customerCreateResult) {
+    if (!customerCreateResultML) {
       return new Response(
         "Customer creation failed",
         {
@@ -157,7 +157,7 @@ export async function loader({ request }) {
     }
 
     if (
-      customerCreateResult.userErrors.length > 0
+      customerCreateResultML.userErrors.length > 0
     ) {
       return new Response(
         "Customer creation failed",
@@ -167,46 +167,46 @@ export async function loader({ request }) {
       );
     }
 
-    shopifyCustomerId =
-      customerCreateResult.customer.id;
+    shopifyCustomerIdML =
+      customerCreateResultML.customer.id;
   }
 
-  const user =
+  const userML =
     await prisma.linkedUser.upsert({
       where: {
-        email: linkedUser.email,
+        email: linkedUserML.email,
       },
       update: {
         name:
-          linkedUser.name,
+          linkedUserML.name,
         profileImage:
-          linkedUser.picture,
-        shopifyCustomerId,
+          linkedUserML.picture,
+        shopifyCustomerId: shopifyCustomerIdML,
       },
       create: {
         linkedId:
-          linkedUser.sub,
+          linkedUserML.sub,
         name:
-          linkedUser.name,
+          linkedUserML.name,
         email:
-          linkedUser.email,
+          linkedUserML.email,
         profileImage:
-          linkedUser.picture,
-        shopifyCustomerId,
+          linkedUserML.picture,
+        shopifyCustomerId: shopifyCustomerIdML,
       },
     });
 
-  const authCode =
+  const authCodeML =
     crypto.randomUUID();
 
-  await saveCode(authCode, {
-    email: user.email,
-    name: user.name,
-    id: shopifyCustomerId,
-    nonce,
+  await saveCode(authCodeML, {
+    email: userML.email,
+    name: userML.name,
+    id: shopifyCustomerIdML,
+    nonce: nonceML,
   });
 
-  if (!redirect_uri) {
+  if (!redirect_uriML) {
     return new Response(
       "Missing redirect_uri",
       {
@@ -216,7 +216,7 @@ export async function loader({ request }) {
   }
 
   return redirect(
-    `${redirect_uri}?code=${authCode}&state=${state}`
+    `${redirect_uriML}?code=${authCodeML}&state=${stateML}`
   );
 }
 

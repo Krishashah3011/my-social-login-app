@@ -4,71 +4,71 @@ import { unauthenticated } from "../shopify.server";
 import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 
-export async function action({ request }) {
-  const formData = await request.formData();
-  const email = (formData.get("email") || "").toString().trim().toLowerCase();
-  const code = (formData.get("code") || "").toString().trim();
-  const state = (formData.get("state") || "").toString();
-  const redirect_uri = (formData.get("redirect_uri") || "").toString();
-  const nonce = (formData.get("nonce") || "").toString();
+export async function action({ request: requestML }) {
+  const formDataML = await requestML.formData();
+  const emailML = (formDataML.get("email") || "").toString().trim().toLowerCase();
+  const codeML = (formDataML.get("code") || "").toString().trim();
+  const stateML = (formDataML.get("state") || "").toString();
+  const redirect_uriML = (formDataML.get("redirect_uri") || "").toString();
+  const nonceML = (formDataML.get("nonce") || "").toString();
 
-  const otp = await prisma.emailOtp.findFirst({
-    where: { email, consumed: false },
+  const otpML = await prisma.emailOtp.findFirst({
+    where: { email: emailML, consumed: false },
     orderBy: { createdAt: "desc" },
   });
 
-  if (!otp) {
+  if (!otpML) {
     return { error: "No code found. Request a new one." };
   }
 
-  if (otp.expiresAt < new Date()) {
+  if (otpML.expiresAt < new Date()) {
     return { error: "Code expired. Request a new one." };
   }
 
-  if (otp.attempts >= 5) {
+  if (otpML.attempts >= 5) {
     return { error: "Too many attempts. Request a new code." };
   }
 
-  if (otp.code !== code) {
+  if (otpML.code !== codeML) {
     await prisma.emailOtp.update({
-      where: { id: otp.id },
+      where: { id: otpML.id },
       data: { attempts: { increment: 1 } },
     });
     return { error: "Incorrect code." };
   }
 
   await prisma.emailOtp.update({
-    where: { id: otp.id },
+    where: { id: otpML.id },
     data: { consumed: true },
   });
 
-  const shopSession = await prisma.session.findFirst({
+  const shopSessionML = await prisma.session.findFirst({
     where: { isOnline: false },
   });
 
-  if (!shopSession) {
+  if (!shopSessionML) {
     return new Response("No Shopify session found", { status: 500 });
   }
 
-  const { admin } = await unauthenticated.admin(shopSession.shop);
+  const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
 
-  let shopifyCustomerId = null;
+  let shopifyCustomerIdML = null;
 
-  const existingCustomerResponse = await admin.graphql(
+  const existingCustomerResponseML = await adminML.graphql(
     `#graphql
     query {
-      customers(first:1, query:"email:${email}") {
+      customers(first:1, query:"email:${emailML}") {
         edges { node { id email } }
       }
     }`,
   );
-  const existingData = await existingCustomerResponse.json();
-  const existingCustomer = existingData.data?.customers?.edges[0]?.node;
+  const existingDataML = await existingCustomerResponseML.json();
+  const existingCustomerML = existingDataML.data?.customers?.edges[0]?.node;
 
-  if (existingCustomer) {
-    shopifyCustomerId = existingCustomer.id;
+  if (existingCustomerML) {
+    shopifyCustomerIdML = existingCustomerML.id;
   } else {
-    const customerResponse = await admin.graphql(
+    const customerResponseML = await adminML.graphql(
       `#graphql
       mutation customerCreate($input: CustomerInput!) {
         customerCreate(input:$input){
@@ -76,30 +76,30 @@ export async function action({ request }) {
           userErrors { field message }
         }
       }`,
-      { variables: { input: { email } } },
+      { variables: { input: { email: emailML } } },
     );
-    const result = await customerResponse.json();
-    const customerCreateResult = result.data?.customerCreate;
+    const resultML = await customerResponseML.json();
+    const customerCreateResultML = resultML.data?.customerCreate;
 
-    if (!customerCreateResult || customerCreateResult.userErrors.length > 0) {
+    if (!customerCreateResultML || customerCreateResultML.userErrors.length > 0) {
       return { error: "Could not create account. Try again." };
     }
 
-    shopifyCustomerId = customerCreateResult.customer?.id;
+    shopifyCustomerIdML = customerCreateResultML.customer?.id;
   }
 
-  const authCode = crypto.randomUUID();
+  const authCodeML = crypto.randomUUID();
 
-  await saveCode(authCode, {
-    email,
-    name: email.split("@")[0],
-    id: shopifyCustomerId,
-    nonce,
+  await saveCode(authCodeML, {
+    email: emailML,
+    name: emailML.split("@")[0],
+    id: shopifyCustomerIdML,
+    nonce: nonceML,
   });
 
-  if (!redirect_uri) {
+  if (!redirect_uriML) {
     return { error: "Missing redirect_uri" };
   }
 
-  return redirect(`${redirect_uri}?code=${authCode}&state=${state}`);
+  return redirect(`${redirect_uriML}?code=${authCodeML}&state=${stateML}`);
 }

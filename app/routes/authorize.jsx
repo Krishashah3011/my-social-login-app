@@ -1,18 +1,18 @@
-export async function loader({ request }) {
-  const url = new URL(request.url);
+export async function loader({ request: requestML }) {
+  const urlML = new URL(requestML.url);
 
-  const redirect_uri = url.searchParams.get("redirect_uri");
-  const state = url.searchParams.get("state");
-  const nonce = url.searchParams.get("nonce");
+  const redirect_uriML = urlML.searchParams.get("redirect_uri");
+  const stateML = urlML.searchParams.get("state");
+  const nonceML = urlML.searchParams.get("nonce");
 
-  const providerURL =
+  const providerURLML =
     `/select-provider?` +
-    `state=${encodeURIComponent(state || "")}` +
-    `&redirect_uri=${encodeURIComponent(redirect_uri || "")}` +
-    `&nonce=${encodeURIComponent(nonce || "")}`;
+    `state=${encodeURIComponent(stateML || "")}` +
+    `&redirect_uri=${encodeURIComponent(redirect_uriML || "")}` +
+    `&nonce=${encodeURIComponent(nonceML || "")}`;
 
   return Response.redirect(
-    new URL(providerURL, url.origin)
+    new URL(providerURLML, urlML.origin)
   );
 }
 

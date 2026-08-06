@@ -2,18 +2,18 @@ import { redirect, Form, useLoaderData } from "react-router";
 import { login } from "../../shopify.server";
 import styles from "./styles.module.css";
 
-export const loader = async ({ request }) => {
-  const url = new URL(request.url);
+export const loader = async ({ request: requestML }) => {
+  const urlML = new URL(requestML.url);
 
-  if (url.searchParams.get("shop")) {
-    throw redirect(`/app?${url.searchParams.toString()}`);
+  if (urlML.searchParams.get("shop")) {
+    throw redirect(`/app?${urlML.searchParams.toString()}`);
   }
 
   return { showForm: Boolean(login) };
 };
 
 export default function App() {
-  const { showForm } = useLoaderData();
+  const { showForm: showFormML } = useLoaderData();
 
   return (
     <div className={styles.index}>
@@ -22,7 +22,7 @@ export default function App() {
         <p className={styles.text}>
           A tagline about [your app] that describes your value proposition.
         </p>
-        {showForm && (
+        {showFormML && (
           <Form className={styles.form} method="post" action="/auth/login">
             <label className={styles.label}>
               <span>Shop domain</span>

@@ -1,33 +1,33 @@
 import { getCode } from "../utils/authCodes.server";
 import { createOIDCToken } from "../utils/oidc.server";
 
-export async function action({ request }) {
+export async function action({ request: requestML }) {
 
-  const url = new URL(request.url);
-  const host = request.headers.get("x-forwarded-host") || url.host;
-  const issuer = `https://${host}`;
+  const urlML = new URL(requestML.url);
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const issuerML = `https://${hostML}`;
 
-  const body = await request.text();
+  const bodyML = await requestML.text();
 
-  const params = new URLSearchParams(body);
+  const paramsML = new URLSearchParams(bodyML);
 
-  const code = params.get("code");
-  let client_id = params.get("client_id");
-  let client_secret = params.get("client_secret");
+  const codeML = paramsML.get("code");
+  let client_idML = paramsML.get("client_id");
+  let client_secretML = paramsML.get("client_secret");
 
-  const authHeader = request.headers.get("authorization");
+  const authHeaderML = requestML.headers.get("authorization");
 
-  if (!client_id && authHeader?.startsWith("Basic ")) {
-    const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
-    const [headerClientId, headerClientSecret] = decoded.split(":");
+  if (!client_idML && authHeaderML?.startsWith("Basic ")) {
+    const decodedML = Buffer.from(authHeaderML.slice(6), "base64").toString("utf-8");
+    const [headerClientIdML, headerClientSecretML] = decodedML.split(":");
 
-    client_id = headerClientId;
-    client_secret = headerClientSecret;
+    client_idML = headerClientIdML;
+    client_secretML = headerClientSecretML;
   }
 
   if (
-    client_id !== process.env.OIDC_CLIENT_ID ||
-    client_secret !== process.env.OIDC_CLIENT_SECRET
+    client_idML !== process.env.OIDC_CLIENT_ID ||
+    client_secretML !== process.env.OIDC_CLIENT_SECRET
   ) {
     return Response.json(
       { error: "invalid_client" },
@@ -40,7 +40,7 @@ export async function action({ request }) {
     );
   }
 
-  if (!code) {
+  if (!codeML) {
     return Response.json(
       { error: "invalid_request" },
       {
@@ -52,9 +52,9 @@ export async function action({ request }) {
     );
   }
 
-  const user = await getCode(code);
+  const userML = await getCode(codeML);
 
-  if (!user) {
+  if (!userML) {
     return Response.json(
       { error: "invalid_grant" },
       {
@@ -66,29 +66,29 @@ export async function action({ request }) {
     );
   }
 
-  const id_token = await createOIDCToken({
-    email: user.email,
-    name: user.name,
-    id: user.id,
-    nonce: user.nonce,
-    client_id: client_id,
-    issuer,
+  const id_tokenML = await createOIDCToken({
+    email: userML.email,
+    name: userML.name,
+    id: userML.id,
+    nonce: userML.nonce,
+    client_id: client_idML,
+    issuer: issuerML,
   });
 
-  const [, payloadB64] = id_token.split(".");
-  const decodedPayload = JSON.parse(
-    Buffer.from(payloadB64, "base64").toString()
+  const [, payloadB64ML] = id_tokenML.split(".");
+  const decodedPayloadML = JSON.parse(
+    Buffer.from(payloadB64ML, "base64").toString()
   );
 
-  const responseBody = {
-    access_token: id_token,
+  const responseBodyML = {
+    access_token: id_tokenML,
     token_type: "Bearer",
     expires_in: 300,
-    id_token,
+    id_token: id_tokenML,
     scope: "openid email customer-account-api:full",
   };
 
-  return new Response(JSON.stringify(responseBody), {
+  return new Response(JSON.stringify(responseBodyML), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
