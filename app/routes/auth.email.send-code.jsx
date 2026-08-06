@@ -1,9 +1,19 @@
 import prisma from "../db.server";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import crypto from "crypto";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const RESEND_COOLDOWN_SECONDS = 30;
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false,       // Port 587
+  requireTLS: true,    // STARTTLS
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -29,7 +39,9 @@ export async function action({ request }) {
     const secondsSinceLast = (Date.now() - recent.createdAt.getTime()) / 1000;
     if (secondsSinceLast < RESEND_COOLDOWN_SECONDS) {
       return {
-        error: `Please wait ${Math.ceil(RESEND_COOLDOWN_SECONDS - secondsSinceLast)}s before requesting another code.`,
+        error: `Please wait ${Math.ceil(
+          RESEND_COOLDOWN_SECONDS - secondsSinceLast
+        )}s before requesting another code.`,
       };
     }
   }
@@ -38,18 +50,29 @@ export async function action({ request }) {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await prisma.emailOtp.create({
-    data: { email, code, state, redirectUri: redirect_uri, nonce, expiresAt },
+    data: {
+      email,
+      code,
+      state,
+      redirectUri: redirect_uri,
+      nonce,
+      expiresAt,
+    },
   });
 
   try {
-    await resend.emails.send({
-      from: "Login <onboarding@resend.dev>",
+    await transporter.sendMail({
+      from: `"Login" <${process.env.SMTP_FROM_EMAIL}>`,
       to: email,
       subject: "Your login code",
-      html: `<p>Your verification code is:</p><h2 style="letter-spacing:4px">${code}</h2><p>This code expires in 10 minutes.</p>`,
+      html: `
+        <p>Your verification code is:</p>
+        <h2 style="letter-spacing:4px">${code}</h2>
+        <p>This code expires in 10 minutes.</p>
+      `,
     });
   } catch (err) {
-    console.error("RESEND SEND ERROR:", err);
+    console.error("SMTP SEND ERROR:", err);
     return { error: "Failed to send code. Try again." };
   }
 

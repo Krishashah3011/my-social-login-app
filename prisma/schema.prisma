@@ -123,6 +123,11 @@ model ShopSettings {
   serialKey       String?  @unique
   username        String?
   accountEmail    String?
+  googleLogo      String?
+  twitterLogo     String?
+  facebookLogo    String?
+  linkedinLogo    String?
+  amazonLogo      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

@@ -10,6 +10,7 @@ export async function loader({ request }) {
   console.log("OIDC CLIENT:", client_id);
   console.log("STATE:", state);
   console.log("NONCE:", nonce);
+  console.log("ALL PARAMS:", Object.fromEntries(url.searchParams));
 
   const providerURL =
     `/select-provider?` +

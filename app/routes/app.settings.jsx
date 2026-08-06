@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLoaderData, useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -59,6 +59,65 @@ export const action = async ({ request }) => {
   });
 
   return { settings: updated };
+};
+
+// ---- default provider icon previews (small, for settings thumbnails) ----
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.7-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z"/>
+      <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1C3.4 21.4 7.4 24 12 24z"/>
+      <path fill="#FBBC05" d="M5.4 14.4c-.2-.7-.4-1.4-.4-2.4s.1-1.7.4-2.4V6.5H1.4C.5 8.2 0 10 0 12s.5 3.8 1.4 5.5l4-3.1z"/>
+      <path fill="#EA4335" d="M12 4.8c1.7 0 3.3.6 4.5 1.7l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.6 1.4 6.5l4 3.1C6.3 6.9 8.9 4.8 12 4.8z"/>
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="12" fill="#0A66C2"/>
+      <path fill="#fff" d="M8.5 9.5h-2v7h2v-7zM7.5 8.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM17 12.6c0-2-1.1-2.9-2.5-2.9-1.1 0-1.6.6-1.9 1v-.9h-2v7h2v-3.9c0-.6.4-1.2 1.1-1.2s1.1.6 1.1 1.2v3.9h2v-4.2z"/>
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="12" fill="#1877F2"/>
+      <path fill="#fff" d="M13.5 21v-7h2.3l.3-2.7h-2.6V9.5c0-.8.2-1.3 1.3-1.3h1.4V5.8c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.1-3.2 3.3v1.9H8.8v2.7h2.3v7h2.4z"/>
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="12" fill="#000"/>
+      <path fill="#fff" d="M6.5 6.5l4.2 5.6-4.4 5.4h1.3l3.8-4.7 3.1 4.7h3l-4.5-6 4.1-5h-1.3l-3.5 4.3-2.8-4.3h-3z"/>
+    </svg>
+  );
+}
+
+function AmazonIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="12" fill="#000"/>
+      <path fill="#FF9900" d="M17.5 15.8c-1.8 1.3-4.3 2-6.5 2-3.1 0-5.9-1.1-8-3-.2-.2 0-.4.2-.3 2.3 1.3 5.1 2.1 8 2.1 2 0 4.1-.4 6.1-1.2.3-.1.5.2.2.4z"/>
+      <path fill="#FF9900" d="M18.3 14.9c-.2-.3-1.5-.1-2.1-.1-.2 0-.2-.2-.1-.3 1-.7 2.6-.5 2.8-.3.2.3-.1 1.8-1 2.6-.1.1-.3 0-.2-.1.3-.5.7-1.5.6-1.8z"/>
+      <path fill="#fff" d="M13 8.7v-.4c0-.2.1-.3.3-.3h2c.2 0 .3.1.3.3v.3c0 .2-.2.4-.4.7l-1 1.5c.4 0 .8.1 1.1.3.1 0 .1.1.1.2v.4c0 .1-.1.2-.3.2-.6-.3-1.4-.4-2 0-.1.1-.2 0-.2-.2v-.4c0-.1 0-.2.1-.3l1.2-1.7h-1c-.2 0-.3-.1-.3-.3z"/>
+      <path fill="#fff" d="M8.7 12h-.6c-.1 0-.2-.1-.2-.2V8.5c0-.1.1-.2.2-.2h.6c.1 0 .2.1.2.2v.4c.3-.4.6-.6 1.1-.6.5 0 .8.2.9.7.3-.5.7-.7 1.2-.7.4 0 .7.1.9.4.3.3.2.7.2 1.1v2.1c0 .1-.1.2-.2.2h-.6c-.1 0-.2-.1-.2-.2V10c0-.2 0-.7-.5-.7-.4 0-.6.4-.6.7v1.8c0 .1-.1.2-.2.2h-.6c-.1 0-.2-.1-.2-.2V10c0-.2 0-.7-.5-.7s-.6.4-.6.7v1.8c0 .1-.1.2-.2.2z"/>
+    </svg>
+  );
+}
+
+const DEFAULT_ICONS = {
+  google: GoogleIcon,
+  linkedin: LinkedInIcon,
+  facebook: FacebookIcon,
+  twitter: XIcon,
+  amazon: AmazonIcon,
 };
 
 function InfoIcon() {
@@ -186,7 +245,6 @@ const styles = {
     fontSize: "12px",
     fontWeight: 400,
     color: TEXT_MUTED,
-    //maxWidth: "570px",
     marginTop: "4px",
   },
   serialPill: {
@@ -209,6 +267,58 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     padding: "12px 10px",
+  },
+  logoRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "0 10px 12px",
+  },
+  logoPreview: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "50%",
+    border: `1px solid ${BORDER}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+    background: "#fff",
+  },
+  logoPreviewImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  logoUploadLabel: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "12px",
+    fontWeight: 500,
+    color: BLUE,
+    cursor: "pointer",
+    textDecoration: "underline",
+  },
+  logoUploadLabelDisabled: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "12px",
+    fontWeight: 500,
+    color: GRAY_OFF,
+    cursor: "default",
+    textDecoration: "none",
+  },
+  logoResetLabel: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "12px",
+    fontWeight: 400,
+    color: TEXT_MUTED,
+    cursor: "pointer",
+    textDecoration: "underline",
+  },
+  logoHint: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "11px",
+    color: TEXT_MUTED,
   },
 };
 
@@ -239,15 +349,96 @@ function saveButtonStyle(disabled) {
   };
 }
 
-function ProviderRow({ name, subtitle, checked, onToggle, disabled }) {
+function LogoUploader({ providerKey, logoUrl, enabled, shop }) {
+  const fileInputRef = useRef(null);
+  const uploadFetcher = useFetcher();
+  const resetFetcher = useFetcher();
+  const DefaultIcon = DEFAULT_ICONS[providerKey];
+
+  const isUploading = uploadFetcher.state !== "idle";
+  const isResetting = resetFetcher.state !== "idle";
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.set("provider", providerKey);
+    formData.set("file", file);
+
+    uploadFetcher.submit(formData, {
+      method: "POST",
+      action: "/app/settings/upload-logo",
+      encType: "multipart/form-data",
+    });
+
+    e.target.value = "";
+  };
+
+  const handleReset = () => {
+    const formData = new FormData();
+    formData.set("provider", providerKey);
+    formData.set("intent", "reset");
+
+    resetFetcher.submit(formData, {
+      method: "POST",
+      action: "/app/settings/upload-logo",
+    });
+  };
+
   return (
-    <div style={styles.providerRow}>
-      <div>
-        <div style={styles.label}>{name}</div>
-        {subtitle && <div style={{ ...styles.subLabel, marginTop: "2px" }}>{subtitle}</div>}
+    <div style={styles.logoRow}>
+      <div style={styles.logoPreview}>
+        {logoUrl ? (
+          <img src={logoUrl} alt={`${providerKey} logo`} style={styles.logoPreviewImg} />
+        ) : (
+          <DefaultIcon />
+        )}
       </div>
-      <ToggleSwitch checked={checked} onChange={onToggle} disabled={disabled} />
+
+      {enabled ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <label style={styles.logoUploadLabel}>
+              {isUploading ? "Uploading..." : "Upload new logo"}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                style={{ display: "none" }}
+              />
+            </label>
+            {logoUrl && (
+              <span style={styles.logoResetLabel} onClick={isResetting ? undefined : handleReset}>
+                {isResetting ? "Resetting..." : "Reset to default"}
+              </span>
+            )}
+          </div>
+          <span style={styles.logoHint}>PNG, JPG or SVG</span>
+        </div>
+      ) : (
+        <span style={styles.logoUploadLabelDisabled}>
+          Enable this provider to customize its logo
+        </span>
+      )}
     </div>
+  );
+}
+
+function ProviderRow({ providerKey, name, subtitle, checked, onToggle, logoUrl }) {
+  return (
+    <>
+      <div style={styles.providerRow}>
+        <div>
+          <div style={styles.label}>{name}</div>
+          {subtitle && <div style={{ ...styles.subLabel, marginTop: "2px" }}>{subtitle}</div>}
+        </div>
+        <ToggleSwitch checked={checked} onChange={onToggle} />
+      </div>
+      <LogoUploader providerKey={providerKey} logoUrl={logoUrl} enabled={checked} />
+    </>
   );
 }
 
@@ -276,11 +467,8 @@ export default function Settings() {
 
   const toggle = (field) => {
     setValues((prev) => {
-      // Master Status toggle
       if (field === "appEnabled") {
         const newStatus = !prev.appEnabled;
-
-        // Turning OFF -> turn everything OFF
         if (!newStatus) {
           return {
             appEnabled: false,
@@ -291,20 +479,9 @@ export default function Settings() {
             amazonEnabled: false,
           };
         }
-
-        // Turning ON -> only enable the app.
-        // Providers stay OFF until you enable them manually.
-        return {
-          ...prev,
-          appEnabled: true,
-        };
+        return { ...prev, appEnabled: true };
       }
-
-      // Individual provider toggle
-      return {
-        ...prev,
-        [field]: !prev[field],
-      };
+      return { ...prev, [field]: !prev[field] };
     });
   };
 
@@ -335,7 +512,6 @@ export default function Settings() {
         </div>
 
         <div style={styles.innerCard}>
-          {/* License and Status */}
           <div style={styles.licenseBox}>
             <div style={styles.licenseTitle}>License and Status</div>
             <hr style={styles.divider} />
@@ -354,48 +530,54 @@ export default function Settings() {
                   shown on your store.
                 </div>
               </div>
-              <ToggleSwitch
-                checked={values.appEnabled}
-                onChange={() => toggle("appEnabled")}
-              />
+              <ToggleSwitch checked={values.appEnabled} onChange={() => toggle("appEnabled")} />
             </div>
           </div>
 
-          {/* Login providers */}
           <div style={styles.providersBox}>
             <ProviderRow
+              providerKey="google"
               name="Google"
               subtitle="Continue with Google"
               checked={values.googleEnabled}
               onToggle={() => toggle("googleEnabled")}
+              logoUrl={settings.googleLogo}
             />
             <hr style={styles.divider} />
             <ProviderRow
+              providerKey="linkedin"
               name="Linkedin"
               subtitle="Continue with Linkedin"
               checked={values.linkedinEnabled}
               onToggle={() => toggle("linkedinEnabled")}
+              logoUrl={settings.linkedinLogo}
             />
             <hr style={styles.divider} />
             <ProviderRow
+              providerKey="facebook"
               name="Facebook"
               subtitle="Continue with Facebook"
               checked={values.facebookEnabled}
               onToggle={() => toggle("facebookEnabled")}
+              logoUrl={settings.facebookLogo}
             />
             <hr style={styles.divider} />
             <ProviderRow
+              providerKey="twitter"
               name="X (Twitter)"
               subtitle="Continue with Twitter"
               checked={values.twitterEnabled}
               onToggle={() => toggle("twitterEnabled")}
+              logoUrl={settings.twitterLogo}
             />
             <hr style={styles.divider} />
             <ProviderRow
+              providerKey="amazon"
               name="Amazon"
               subtitle="Continue with Amazon"
               checked={values.amazonEnabled}
               onToggle={() => toggle("amazonEnabled")}
+              logoUrl={settings.amazonLogo}
             />
           </div>
         </div>

@@ -1,5 +1,31 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useFetcher } from "react-router";
+import { useSearchParams, useFetcher, useLoaderData } from "react-router";
+import db from "../db.server";
+
+export const loader = async () => {
+  const shop = process.env.SHOP_DOMAIN;
+
+  const settings = shop
+    ? await db.shopSettings.findUnique({ where: { shop } })
+    : null;
+
+  return {
+    logos: {
+      google: settings?.googleLogo || null,
+      linkedin: settings?.linkedinLogo || null,
+      facebook: settings?.facebookLogo || null,
+      twitter: settings?.twitterLogo || null,
+      amazon: settings?.amazonLogo || null,
+    },
+    enabled: {
+      google: settings?.googleEnabled ?? true,
+      linkedin: settings?.linkedinEnabled ?? true,
+      facebook: settings?.facebookEnabled ?? true,
+      twitter: settings?.twitterEnabled ?? true,
+      amazon: settings?.amazonEnabled ?? true,
+    },
+  };
+};
 
 function GoogleIcon() {
   return (
@@ -116,10 +142,12 @@ const styles = {
     cursor: "pointer",
     background: "#fff",
     textDecoration: "none",
+    overflow: "hidden",
   },
 };
 
 export default function SelectProvider() {
+  const { logos, enabled } = useLoaderData();
   const [searchParams] = useSearchParams();
   const state = searchParams.get("state") || "";
   const redirect_uri = searchParams.get("redirect_uri") || "";
@@ -270,21 +298,51 @@ export default function SelectProvider() {
         <div style={styles.divider}>OR</div>
 
         <div style={styles.iconRow}>
-          <a href={socialUrl("google")} style={styles.iconButton} title="Continue with Google">
-            <GoogleIcon />
-          </a>
-          <a href={socialUrl("linked")} style={styles.iconButton} title="Continue with LinkedIn">
-            <LinkedInIcon />
-          </a>
-          <a href={socialUrl("facebook")} style={styles.iconButton} title="Continue with Facebook">
-            <FacebookIcon />
-          </a>
-          <a href={socialUrl("twitter")} style={styles.iconButton} title="Continue with X">
-            <XIcon />
-          </a>
-          <a href={socialUrl("amazon")} style={styles.iconButton} title="Continue with Amazon">
-            <AmazonIcon />
-          </a>
+          {enabled.google && (
+            <a href={socialUrl("google")} style={styles.iconButton} title="Continue with Google">
+              {logos.google ? (
+                <img src={logos.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} />
+              ) : (
+                <GoogleIcon />
+              )}
+            </a>
+          )}
+          {enabled.linkedin && (
+            <a href={socialUrl("linked")} style={styles.iconButton} title="Continue with LinkedIn">
+              {logos.linkedin ? (
+                <img src={logos.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} />
+              ) : (
+                <LinkedInIcon />
+              )}
+            </a>
+          )}
+          {enabled.facebook && (
+            <a href={socialUrl("facebook")} style={styles.iconButton} title="Continue with Facebook">
+              {logos.facebook ? (
+                <img src={logos.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} />
+              ) : (
+                <FacebookIcon />
+              )}
+            </a>
+          )}
+          {enabled.twitter && (
+            <a href={socialUrl("twitter")} style={styles.iconButton} title="Continue with X">
+              {logos.twitter ? (
+                <img src={logos.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} />
+              ) : (
+                <XIcon />
+              )}
+            </a>
+          )}
+          {enabled.amazon && (
+            <a href={socialUrl("amazon")} style={styles.iconButton} title="Continue with Amazon">
+              {logos.amazon ? (
+                <img src={logos.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} />
+              ) : (
+                <AmazonIcon />
+              )}
+            </a>
+          )}
         </div>
       </div>
     </div>
