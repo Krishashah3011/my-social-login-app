@@ -36,27 +36,21 @@ export async function loader({ request }) {
   });
 
   const tokens = await tokenResponse.json();
-  console.log("AMAZON TOKENS:", tokens);
 
   if (!tokens.access_token) {
-    console.log("AMAZON TOKEN ERROR:", tokens);
     return new Response("Amazon token exchange failed", { status: 400 });
   }
 
-  // Get Amazon user profile
   const userResponse = await fetch("https://api.amazon.com/user/profile", {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
 
   const amazonUser = await userResponse.json();
-  console.log("AMAZON USER:", amazonUser);
 
   if (!amazonUser.email) {
-    console.log("AMAZON USER MISSING EMAIL:", amazonUser);
     return new Response("Amazon profile missing email", { status: 400 });
   }
 
-  // Shopify offline session
   const shopSession = await prisma.session.findFirst({
     where: { isOnline: false },
   });
@@ -83,7 +77,6 @@ export async function loader({ request }) {
 
   if (existingCustomer) {
     shopifyCustomerId = existingCustomer.id;
-    console.log("Existing customer:", shopifyCustomerId);
   } else {
     const nameParts = (amazonUser.name || "").split(" ");
     const customerResponse = await admin.graphql(
@@ -106,20 +99,16 @@ export async function loader({ request }) {
     );
 
     const result = await customerResponse.json();
-    console.log("Created customer:", result);
 
     const customerCreateResult = result.data?.customerCreate;
 
     if (!customerCreateResult || customerCreateResult.userErrors.length > 0) {
-      console.log("CUSTOMER CREATE ERROR:", result);
       return new Response("Customer creation failed", { status: 400 });
     }
 
     shopifyCustomerId = customerCreateResult.customer?.id;
-    console.log("NEW SHOPIFY CUSTOMER ID:", shopifyCustomerId);
   }
 
-  // Save user in Prisma
   const user = await prisma.amazonUser.upsert({
     where: { email: amazonUser.email },
     update: {
@@ -134,8 +123,6 @@ export async function loader({ request }) {
     },
   });
 
-  console.log("DATABASE USER:", user);
-
   const authCode = crypto.randomUUID();
 
   await saveCode(authCode, {
@@ -145,13 +132,9 @@ export async function loader({ request }) {
     nonce,
   });
 
-  console.log("AUTH CODE CREATED:", authCode);
-
   if (!redirect_uri) {
     return new Response("Missing redirect_uri", { status: 400 });
   }
-
-  console.log("REDIRECTING TO SHOPIFY:", redirect_uri);
 
   return redirect(`${redirect_uri}?code=${authCode}&state=${state}`);
 }

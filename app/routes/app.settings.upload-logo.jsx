@@ -63,7 +63,6 @@ export const action = async ({ request }) => {
     return { error: "Provider is disabled" };
   }
 
-  // ---- Reset to default ----
   if (intent === "reset") {
     const updated = await db.shopSettings.update({
       where: { shop: session.shop },
@@ -72,7 +71,6 @@ export const action = async ({ request }) => {
     return { settings: updated };
   }
 
-  // ---- Upload new logo ----
   const file = formData.get("file");
   if (!file || typeof file === "string") {
     return { error: "No file provided" };
@@ -82,7 +80,6 @@ export const action = async ({ request }) => {
   const mimeType = file.type || "image/png";
   const fileSize = String(file.size);
 
-  // Step 1: ask Shopify for a staged upload target
   const stagedResponse = await admin.graphql(STAGED_UPLOADS_CREATE, {
     variables: {
       input: [
@@ -104,7 +101,6 @@ export const action = async ({ request }) => {
 
   const target = stagedJson.data.stagedUploadsCreate.stagedTargets[0];
 
-  // Step 2: upload the actual file bytes to the staged target URL
   const uploadForm = new FormData();
   target.parameters.forEach((param) => {
     uploadForm.append(param.name, param.value);
@@ -120,7 +116,6 @@ export const action = async ({ request }) => {
     return { error: "Upload to Shopify storage failed" };
   }
 
-  // Step 3: register the uploaded file as a permanent Shopify File
   const fileCreateResponse = await admin.graphql(FILE_CREATE, {
     variables: {
       files: [
@@ -138,8 +133,6 @@ export const action = async ({ request }) => {
     return { error: fileErrors.map((e) => e.message).join(", ") };
   }
 
-  // fileCreate returns the file async — image.url may briefly be null right after creation.
-  // Fallback to resourceUrl (works immediately) if image.url isn't ready yet.
   const createdFile = fileCreateJson.data.fileCreate.files[0];
   const finalUrl = createdFile?.image?.url || target.resourceUrl;
 

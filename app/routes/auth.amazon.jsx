@@ -7,14 +7,12 @@ export async function loader({ request }) {
   const redirect_uri = url.searchParams.get("redirect_uri");
   const nonce = url.searchParams.get("nonce");
 
-  // --- Server-side guard: block if Amazon is disabled for this shop ---
   const shop = process.env.SHOP_DOMAIN;
   const settings = shop
     ? await db.shopSettings.findUnique({ where: { shop } })
     : null;
 
   if (settings && (!settings.appEnabled || !settings.amazonEnabled)) {
-    console.log("BLOCKED: Amazon login attempted while disabled");
     const backToSelector =
       `/select-provider?` +
       `state=${encodeURIComponent(state || "")}` +
@@ -22,15 +20,9 @@ export async function loader({ request }) {
       `&nonce=${encodeURIComponent(nonce || "")}`;
     return Response.redirect(new URL(backToSelector, url.origin));
   }
-  // --- end guard ---
 
   const host = request.headers.get("x-forwarded-host") || url.host;
   const callbackUrl = `https://${host}/amazon/callback`;
-
-  console.log("AMAZON CALLBACK:", callbackUrl);
-  console.log("STATE:", state);
-  console.log("REDIRECT URI:", redirect_uri);
-  console.log("NONCE:", nonce);
 
   const amazonURL =
     `https://www.amazon.com/ap/oa?` +
@@ -39,9 +31,6 @@ export async function loader({ request }) {
     `&response_type=code` +
     `&scope=profile` +
     `&state=${encodeURIComponent(`${state}|${redirect_uri}|${nonce}`)}`;
-
-  console.log("FINAL AMAZON URL:");
-  console.log(amazonURL);
 
   return Response.redirect(amazonURL);
 }

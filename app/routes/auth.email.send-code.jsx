@@ -7,8 +7,8 @@ const RESEND_COOLDOWN_SECONDS = 30;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: false,       // Port 587
-  requireTLS: true,    // STARTTLS
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -72,7 +72,6 @@ export async function action({ request }) {
       `,
     });
   } catch (err) {
-    console.error("SMTP SEND ERROR:", err);
     return { error: "Failed to send code. Try again." };
   }
 

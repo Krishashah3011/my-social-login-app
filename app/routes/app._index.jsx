@@ -59,10 +59,6 @@ export const loader = async ({ request }) => {
     },
   ];
 
-  // -----------------------------
-  // Analytics Data
-  // -----------------------------
-
   const [
     googleUsers,
     linkedUsers,
@@ -185,14 +181,13 @@ export const loader = async ({ request }) => {
     trend,
   };
 };
-// ---- design tokens pulled directly from the Figma CSS export ----
+
 const BLUE = "#073E74";
 const BORDER = "#E5E5E5";
 const DIVIDER = "#DBDBDB";
 const TEXT_BLACK = "#000000";
 const TEXT_MUTED = "#373737";
 
-// Chart colors (matched with current UI)
 const BAR_COLORS = [
   "#073E74",
   "#0D4D8C",
@@ -324,7 +319,7 @@ const styles = {
   },
 
   heroBanner: {
-    width: "95.8%",
+    width: "100%",
     borderRadius: "20px",
     display: "block",
     marginBottom: "16px",
@@ -343,14 +338,12 @@ export default function Index() {
     <s-page heading="Social Login App">
       <TopIconNav active="home" />
 
-      {/* Hero */}
       <img
         src="/banner.png"
         alt="Welcome to Milople Social Login App"
         style={styles.heroBanner}
       />
 
-      {/* Setup Progress */}
       <div style={styles.card}>
         <h2 style={styles.sectionHeading}>
           Your Setup Progress
@@ -371,7 +364,6 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Required Setup Steps */}
       <div style={styles.card}>
         <h2 style={styles.sectionHeading}>
           Required Setup Steps
@@ -412,11 +404,7 @@ export default function Index() {
         ))}
       </div>
 
-      {/* =======================
-          Logins by Provider
-      ======================== */}
-
-            <div style={styles.card}>
+      <div style={styles.card}>
         <h2 style={styles.sectionHeading}>
           Logins by Provider
         </h2>
@@ -474,11 +462,7 @@ export default function Index() {
         </div>
       </div>
 
-      {/* =======================
-          Logins in Last 7 Days
-      ======================== */}
-
-            <div style={styles.card}>
+      <div style={styles.card}>
         <h2 style={styles.sectionHeading}>
           Logins in Last 7 Days
         </h2>

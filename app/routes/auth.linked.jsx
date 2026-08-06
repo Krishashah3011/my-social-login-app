@@ -8,14 +8,12 @@ export async function loader({ request }) {
   const redirect_uri = url.searchParams.get("redirect_uri");
   const nonce = url.searchParams.get("nonce");
 
-  // --- Server-side guard: block if LinkedIn is disabled for this shop ---
   const shop = process.env.SHOP_DOMAIN;
   const settings = shop
     ? await db.shopSettings.findUnique({ where: { shop } })
     : null;
 
   if (settings && (!settings.appEnabled || !settings.linkedinEnabled)) {
-    console.log("BLOCKED: LinkedIn login attempted while disabled");
     const backToSelector =
       `/select-provider?` +
       `state=${encodeURIComponent(state || "")}` +
@@ -23,7 +21,6 @@ export async function loader({ request }) {
       `&nonce=${encodeURIComponent(nonce || "")}`;
     return redirect(backToSelector);
   }
-  // --- end guard ---
 
   const host =
     request.headers.get("x-forwarded-host") || url.host;
@@ -41,9 +38,6 @@ export async function loader({ request }) {
     `&state=${encodeURIComponent(
       `${state}|${redirect_uri}|${nonce}`
     )}`;
-
-  console.log("linked URL:");
-  console.log(linkedURL);
 
   return redirect(linkedURL);
 }

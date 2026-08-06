@@ -14,8 +14,6 @@ export async function loader({ request }) {
   const host = request.headers.get("x-forwarded-host") || url.host;
   const callbackUrl = `https://${host}/twitter/callback`;
 
-  console.log("TWITTER CALLBACK:", callbackUrl);
-
   if (!code) {
     return new Response("No Twitter authorization code received", { status: 400 });
   }
@@ -50,10 +48,8 @@ export async function loader({ request }) {
   });
 
   const tokens = await tokenResponse.json();
-  console.log("TWITTER TOKENS:", tokens);
 
   if (!tokens.access_token) {
-    console.log("TWITTER TOKEN ERROR:", tokens);
     return new Response("Twitter token exchange failed", { status: 400 });
   }
 
@@ -67,7 +63,6 @@ export async function loader({ request }) {
   );
 
   const twitterUserData = await userResponse.json();
-  console.log("TWITTER USER:", twitterUserData);
 
   const twitterUser = twitterUserData.data;
 
@@ -107,7 +102,6 @@ export async function loader({ request }) {
 
   if (existingCustomer) {
     shopifyCustomerId = existingCustomer.id;
-    console.log("Existing customer:", shopifyCustomerId);
   } else {
     const customerResponse = await admin.graphql(
       `#graphql
@@ -134,7 +128,6 @@ export async function loader({ request }) {
     );
 
     const result = await customerResponse.json();
-    console.log("Created customer:", result);
 
     const customerCreateResult = result.data?.customerCreate;
 
@@ -165,8 +158,6 @@ export async function loader({ request }) {
     },
   });
 
-  console.log("DATABASE USER:", user);
-
   const authCode = crypto.randomUUID();
 
   await saveCode(authCode, {
@@ -176,13 +167,9 @@ export async function loader({ request }) {
     nonce,
   });
 
-  console.log("AUTH CODE CREATED:", authCode);
-
   if (!redirect_uri) {
     return new Response("Missing redirect_uri", { status: 400 });
   }
-
-  console.log("REDIRECTING TO SHOPIFY:", redirect_uri);
 
   return redirect(`${redirect_uri}?code=${authCode}&state=${state}`);
 }

@@ -42,7 +42,6 @@ export async function action({ request }) {
     data: { consumed: true },
   });
 
-  // Shopify offline session
   const shopSession = await prisma.session.findFirst({
     where: { isOnline: false },
   });
@@ -83,7 +82,6 @@ export async function action({ request }) {
     const customerCreateResult = result.data?.customerCreate;
 
     if (!customerCreateResult || customerCreateResult.userErrors.length > 0) {
-      console.error("CUSTOMER CREATE ERROR:", result);
       return { error: "Could not create account. Try again." };
     }
 

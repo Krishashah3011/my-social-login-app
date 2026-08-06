@@ -2,15 +2,12 @@ import { getCode } from "../utils/authCodes.server";
 import { createOIDCToken } from "../utils/oidc.server";
 
 export async function action({ request }) {
-  console.log("TOKEN ENDPOINT HIT");
 
   const url = new URL(request.url);
   const host = request.headers.get("x-forwarded-host") || url.host;
   const issuer = `https://${host}`;
-  console.log("COMPUTED ISSUER:", issuer);
 
   const body = await request.text();
-  console.log("TOKEN BODY:", body);
 
   const params = new URLSearchParams(body);
 
@@ -19,10 +16,6 @@ export async function action({ request }) {
   let client_secret = params.get("client_secret");
 
   const authHeader = request.headers.get("authorization");
-  console.log("AUTH HEADER:", authHeader);
-
-  console.log("EXPECTED CLIENT:", process.env.OIDC_CLIENT_ID);
-  console.log("EXPECTED SECRET:", process.env.OIDC_CLIENT_SECRET);
 
   if (!client_id && authHeader?.startsWith("Basic ")) {
     const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
@@ -32,15 +25,10 @@ export async function action({ request }) {
     client_secret = headerClientSecret;
   }
 
-  console.log("AUTH CODE:", code);
-  console.log("CLIENT ID:", client_id);
-
   if (
     client_id !== process.env.OIDC_CLIENT_ID ||
     client_secret !== process.env.OIDC_CLIENT_SECRET
   ) {
-    console.log("INVALID CLIENT CREDENTIALS");
-
     return Response.json(
       { error: "invalid_client" },
       {
@@ -66,8 +54,6 @@ export async function action({ request }) {
 
   const user = await getCode(code);
 
-  console.log("USER FROM CODE:", user);
-
   if (!user) {
     return Response.json(
       { error: "invalid_grant" },
@@ -89,14 +75,10 @@ export async function action({ request }) {
     issuer,
   });
 
-  console.log("ID TOKEN CREATED");
-
   const [, payloadB64] = id_token.split(".");
   const decodedPayload = JSON.parse(
     Buffer.from(payloadB64, "base64").toString()
   );
-
-  console.log("DECODED ID TOKEN PAYLOAD:", decodedPayload);
 
   const responseBody = {
     access_token: id_token,
@@ -105,13 +87,6 @@ export async function action({ request }) {
     id_token,
     scope: "openid email customer-account-api:full",
   };
-
-  console.log(
-    "FINAL TOKEN RESPONSE:",
-    JSON.stringify(responseBody, null, 2)
-  );
-
-  console.log("RETURNING JSON NOW");
 
   return new Response(JSON.stringify(responseBody), {
     status: 200,

@@ -32,7 +32,6 @@ export async function loader({ request }) {
   const [state, redirect_uri, nonce] =
     stateData.split("|");
 
-  // Exchange linked code for token
   const tokenResponse = await fetch(
     "https://www.linkedin.com/oauth/v2/accessToken",
     {
@@ -51,11 +50,8 @@ export async function loader({ request }) {
   );
 
   const tokens = await tokenResponse.json();
-  console.log("linked TOKENS:", tokens);
 
   if (!tokens.access_token) {
-    console.log("linked TOKEN ERROR:", tokens);
-
     return new Response(
       "linked token exchange failed",
       {
@@ -64,7 +60,6 @@ export async function loader({ request }) {
     );
   }
 
-  // Get linked user
   const userResponse = await fetch(
     "https://api.linkedin.com/v2/userinfo",
     {
@@ -75,13 +70,6 @@ export async function loader({ request }) {
   );
 
   const linkedUser = await userResponse.json();
-
-  console.log(
-    "linked USER:",
-    linkedUser
-  );
-
-  // Shopify offline session
   const shopSession = await prisma.session.findFirst({
     where: { isOnline: false },
   });
@@ -97,7 +85,6 @@ export async function loader({ request }) {
 
   let shopifyCustomerId = null;
 
-  // Check existing customer
   const existingCustomerResponse =
     await admin.graphql(
       `#graphql
@@ -123,11 +110,6 @@ export async function loader({ request }) {
 
     shopifyCustomerId =
       existingCustomer.id;
-
-    console.log(
-      "Existing customer:",
-      shopifyCustomerId
-    );
 
   } else {
 
@@ -162,11 +144,6 @@ export async function loader({ request }) {
     const result =
       await customerResponse.json();
 
-    console.log(
-      "Created customer:",
-      result
-    );
-
     const customerCreateResult =
       result.data?.customerCreate;
 
@@ -182,10 +159,6 @@ export async function loader({ request }) {
     if (
       customerCreateResult.userErrors.length > 0
     ) {
-      console.log(
-        customerCreateResult.userErrors
-      );
-
       return new Response(
         "Customer creation failed",
         {
@@ -196,15 +169,8 @@ export async function loader({ request }) {
 
     shopifyCustomerId =
       customerCreateResult.customer.id;
-
-    console.log(
-      "NEW SHOPIFY CUSTOMER ID:",
-      shopifyCustomerId
-    );
   }
 
-  // Save linked user
-  console.log("PRISMA MODELS:", Object.keys(prisma));
   const user =
     await prisma.linkedUser.upsert({
       where: {
@@ -230,12 +196,6 @@ export async function loader({ request }) {
       },
     });
 
-  console.log(
-    "DATABASE USER:",
-    user
-  );
-
-  // Temporary authorization code
   const authCode =
     crypto.randomUUID();
 
@@ -246,11 +206,6 @@ export async function loader({ request }) {
     nonce,
   });
 
-  console.log(
-    "AUTH CODE CREATED:",
-    authCode
-  );
-
   if (!redirect_uri) {
     return new Response(
       "Missing redirect_uri",
@@ -259,11 +214,6 @@ export async function loader({ request }) {
       }
     );
   }
-
-  console.log(
-    "REDIRECTING TO SHOPIFY:",
-    redirect_uri
-  );
 
   return redirect(
     `${redirect_uri}?code=${authCode}&state=${state}`

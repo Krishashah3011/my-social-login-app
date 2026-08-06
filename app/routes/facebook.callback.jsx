@@ -31,7 +31,6 @@ export async function loader({ request }) {
   const [state, redirect_uri, nonce] =
     stateData.split("|");
 
-  // Exchange code for token
   const tokenResponse = await fetch(
     "https://graph.facebook.com/v23.0/oauth/access_token?" +
       new URLSearchParams({
@@ -45,11 +44,7 @@ export async function loader({ request }) {
 
   const tokens = await tokenResponse.json();
 
-  console.log("FACEBOOK TOKENS:", tokens);
-
   if (!tokens.access_token) {
-    console.log(tokens);
-
     return new Response(
       "Facebook token exchange failed",
       {
@@ -58,14 +53,11 @@ export async function loader({ request }) {
     );
   }
 
-  // Get Facebook user
   const userResponse = await fetch(
     `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${tokens.access_token}`
   );
 
   const facebookUser = await userResponse.json();
-
-  console.log("FACEBOOK USER:", facebookUser);
 
   const shopSession =
     await prisma.session.findFirst({
@@ -83,7 +75,6 @@ export async function loader({ request }) {
 
   let shopifyCustomerId = null;
 
-  // Check existing customer
   const existingCustomerResponse =
     await admin.graphql(`
       #graphql
@@ -109,10 +100,6 @@ export async function loader({ request }) {
     shopifyCustomerId =
       existingCustomer.id;
 
-    console.log(
-      "Existing customer:",
-      shopifyCustomerId
-    );
   } else {
     const customerResponse =
       await admin.graphql(
@@ -148,8 +135,6 @@ export async function loader({ request }) {
     const result =
       await customerResponse.json();
 
-    console.log(result);
-
     const customerCreateResult =
       result.data?.customerCreate;
 
@@ -168,7 +153,6 @@ export async function loader({ request }) {
       customerCreateResult.customer.id;
   }
 
-  // Save user
   const user =
     await prisma.facebookUser.upsert({
       where: {
@@ -190,8 +174,6 @@ export async function loader({ request }) {
       },
     });
 
-  console.log("DATABASE USER:", user);
-
   const authCode =
     crypto.randomUUID();
 
@@ -201,11 +183,6 @@ export async function loader({ request }) {
     id: shopifyCustomerId,
     nonce,
   });
-
-  console.log(
-    "AUTH CODE CREATED:",
-    authCode
-  );
 
   return redirect(
     `${redirect_uri}?code=${authCode}&state=${state}`

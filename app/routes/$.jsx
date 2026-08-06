@@ -4,7 +4,7 @@ import { getKeys } from "../utils/keys.server";
 export async function loader({ request }) {
   const url = new URL(request.url);
   const host = request.headers.get("x-forwarded-host") || url.host;
-  const baseUrl = `https://${host}`; // force https since cloudflare tunnel is always https externally
+  const baseUrl = `https://${host}`;
 
   if (url.pathname === "/.well-known/jwks.json") {
     const { publicKey } = await getKeys();

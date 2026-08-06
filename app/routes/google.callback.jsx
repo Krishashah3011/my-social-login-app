@@ -22,7 +22,6 @@ export async function loader({ request }) {
 
   const [state, redirect_uri, nonce] = stateData.split("|");
 
-  // Exchange Google code for token
   const tokenResponse = await fetch(
     "https://oauth2.googleapis.com/token",
     {
@@ -42,16 +41,12 @@ export async function loader({ request }) {
 
   const tokens = await tokenResponse.json();
 
-  console.log("GOOGLE TOKENS:", tokens);
-
   if (!tokens.access_token) {
-    console.log("GOOGLE TOKEN ERROR:", tokens);
     return new Response("Google token exchange failed", {
       status: 400,
     });
   }
 
-  // Get Google user
   const userResponse = await fetch(
     "https://www.googleapis.com/oauth2/v2/userinfo",
     {
@@ -63,9 +58,6 @@ export async function loader({ request }) {
 
   const googleUser = await userResponse.json();
 
-  console.log("GOOGLE USER:", googleUser);
-
-  // Shopify offline session
   const shopSession = await prisma.session.findFirst({
     where: { isOnline: false },
   });
@@ -74,12 +66,10 @@ export async function loader({ request }) {
     throw new Error("No Shopify session found");
   }
 
-  // Shopify Admin API
   const { admin } = await unauthenticated.admin(shopSession.shop);
 
   let shopifyCustomerId = null;
 
-  // Check existing customer
   const existingCustomerResponse = await admin.graphql(
     `#graphql
     query {
@@ -101,11 +91,6 @@ export async function loader({ request }) {
 
   if (existingCustomer) {
     shopifyCustomerId = existingCustomer.id;
-
-    console.log(
-      "Existing customer:",
-      shopifyCustomerId
-    );
 
   } else {
     const customerResponse = await admin.graphql(
@@ -135,17 +120,10 @@ export async function loader({ request }) {
 
     const result = await customerResponse.json();
 
-    console.log("Created customer:", result);
-
     const customerCreateResult =
       result.data?.customerCreate;
 
     if (!customerCreateResult) {
-      console.log(
-        "CUSTOMER CREATE RESPONSE ERROR:",
-        result
-      );
-
       return new Response(
         "Customer creation failed",
         { status: 400 }
@@ -153,11 +131,6 @@ export async function loader({ request }) {
     }
 
     if (customerCreateResult.userErrors.length > 0) {
-      console.log(
-        "CUSTOMER CREATE USER ERRORS:",
-        customerCreateResult.userErrors
-      );
-
       return new Response(
         "Customer creation failed",
         { status: 400 }
@@ -166,14 +139,8 @@ export async function loader({ request }) {
 
     shopifyCustomerId =
       customerCreateResult.customer?.id;
-
-    console.log(
-      "NEW SHOPIFY CUSTOMER ID:",
-      shopifyCustomerId
-    );
   }
 
-  // Save user in Prisma
   const user = await prisma.googleUser.upsert({
     where: {
       email: googleUser.email,
@@ -192,9 +159,6 @@ export async function loader({ request }) {
     },
   });
 
-  console.log("DATABASE USER:", user);
-
-  // Temporary authorization code
   const authCode = crypto.randomUUID();
 
   await saveCode(authCode, {
@@ -204,22 +168,12 @@ export async function loader({ request }) {
     nonce,
   });
 
-  console.log(
-    "AUTH CODE CREATED:",
-    authCode
-  );
-
   if (!redirect_uri) {
     return new Response(
       "Missing redirect_uri",
       { status: 400 }
     );
   }
-
-  console.log(
-    "REDIRECTING TO SHOPIFY:",
-    redirect_uri
-  );
 
   return redirect(
     `${redirect_uri}?code=${authCode}&state=${state}`

@@ -4,8 +4,6 @@ import { getKeys } from "./keys.server";
 export async function createOIDCToken(user) {
   const { privateKey } = await getKeys();
 
-  console.log("RUNTIME OIDC_ISSUER:", user.issuer);
-
   const token = await new SignJWT({
     email: user.email,
     email_verified: true,
