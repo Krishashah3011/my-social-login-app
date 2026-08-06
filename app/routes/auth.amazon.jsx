@@ -13,7 +13,7 @@ export async function loader({ request }) {
     ? await db.shopSettings.findUnique({ where: { shop } })
     : null;
 
-  if (settings && !settings.amazonEnabled) {
+  if (settings && (!settings.appEnabled || !settings.amazonEnabled)) {
     console.log("BLOCKED: Amazon login attempted while disabled");
     const backToSelector =
       `/select-provider?` +

@@ -18,11 +18,11 @@ export const loader = async () => {
       amazon: settings?.amazonLogo || null,
     },
     enabled: {
-      google: settings?.googleEnabled ?? true,
-      linkedin: settings?.linkedinEnabled ?? true,
-      facebook: settings?.facebookEnabled ?? true,
-      twitter: settings?.twitterEnabled ?? true,
-      amazon: settings?.amazonEnabled ?? true,
+      google: (settings?.appEnabled ?? true) && (settings?.googleEnabled ?? true),
+      linkedin: (settings?.appEnabled ?? true) && (settings?.linkedinEnabled ?? true),
+      facebook: (settings?.appEnabled ?? true) && (settings?.facebookEnabled ?? true),
+      twitter: (settings?.appEnabled ?? true) && (settings?.twitterEnabled ?? true),
+      amazon: (settings?.appEnabled ?? true) && (settings?.amazonEnabled ?? true),
     },
   };
 };

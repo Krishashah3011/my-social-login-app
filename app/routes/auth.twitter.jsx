@@ -15,7 +15,7 @@ export async function loader({ request }) {
     ? await db.shopSettings.findUnique({ where: { shop } })
     : null;
 
-  if (settings && !settings.twitterEnabled) {
+  if (settings && (!settings.appEnabled || !settings.twitterEnabled)) {
     console.log("BLOCKED: Twitter login attempted while disabled");
     const backToSelector =
       `/select-provider?` +

@@ -32,7 +32,6 @@ export const loader = async ({ request }) => {
       data: { shop: session.shop, serialKey: generateSerialKey() },
     });
   } else if (!settings.serialKey) {
-    // backfill for existing shops — remove if you don't add the column
     settings = await db.shopSettings.update({
       where: { shop: session.shop },
       data: { serialKey: generateSerialKey() },
@@ -61,7 +60,7 @@ export const action = async ({ request }) => {
   return { settings: updated };
 };
 
-// ---- default provider icon previews (small, for settings thumbnails) ----
+// ---- default provider icons ----
 function GoogleIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24">
@@ -349,7 +348,7 @@ function saveButtonStyle(disabled) {
   };
 }
 
-function LogoUploader({ providerKey, logoUrl, enabled, shop }) {
+function LogoUploader({ providerKey, logoUrl, enabled }) {
   const fileInputRef = useRef(null);
   const uploadFetcher = useFetcher();
   const resetFetcher = useFetcher();
@@ -442,10 +441,125 @@ function ProviderRow({ providerKey, name, subtitle, checked, onToggle, logoUrl }
   );
 }
 
+function LoginPreviewModal({ values, settings, onClose }) {
+  const logos = {
+    google: settings.googleLogo,
+    linkedin: settings.linkedinLogo,
+    facebook: settings.facebookLogo,
+    twitter: settings.twitterLogo,
+    amazon: settings.amazonLogo,
+  };
+
+  const previewIconStyle = {
+    width: "44px",
+    height: "44px",
+    borderRadius: "50%",
+    border: "1px solid #e0e0e0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#fff",
+    overflow: "hidden",
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "8px",
+          padding: "24px",
+          width: "380px",
+          textAlign: "center",
+          position: "relative",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "12px",
+            border: "none",
+            background: "none",
+            fontSize: "18px",
+            cursor: "pointer",
+            color: "#707072",
+          }}
+        >
+          ✕
+        </button>
+
+        <div style={{ fontSize: "12px", color: "#707072", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
+          Storefront Login Preview
+        </div>
+
+        <h2 style={{ fontSize: "28px", fontWeight: 400, marginBottom: "24px" }}>Login</h2>
+
+        <div style={{ border: "1px solid #ccc", borderRadius: "4px", padding: "14px", marginBottom: "16px", color: "#999", fontSize: "15px", textAlign: "left" }}>
+          Email
+        </div>
+        <div style={{ background: "#1a1a1a", color: "#fff", borderRadius: "4px", padding: "14px", fontSize: "15px", fontWeight: 600, marginBottom: "24px" }}>
+          Continue
+        </div>
+
+        <div style={{ color: "#999", fontSize: "13px", marginBottom: "16px" }}>OR</div>
+
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "14px" }}>
+          {values.googleEnabled && (
+            <div style={previewIconStyle} title="Google">
+              {logos.google ? <img src={logos.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} /> : <GoogleIcon />}
+            </div>
+          )}
+          {values.linkedinEnabled && (
+            <div style={previewIconStyle} title="LinkedIn">
+              {logos.linkedin ? <img src={logos.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} /> : <LinkedInIcon />}
+            </div>
+          )}
+          {values.facebookEnabled && (
+            <div style={previewIconStyle} title="Facebook">
+              {logos.facebook ? <img src={logos.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} /> : <FacebookIcon />}
+            </div>
+          )}
+          {values.twitterEnabled && (
+            <div style={previewIconStyle} title="X (Twitter)">
+              {logos.twitter ? <img src={logos.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} /> : <XIcon />}
+            </div>
+          )}
+          {values.amazonEnabled && (
+            <div style={previewIconStyle} title="Amazon">
+              {logos.amazon ? <img src={logos.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} /> : <AmazonIcon />}
+            </div>
+          )}
+        </div>
+
+        {!values.appEnabled && (
+          <div style={{ marginTop: "16px", fontSize: "12px", color: "#d82c0d" }}>
+            App is currently disabled — no providers will show on the storefront.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { settings } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
+  const [showPreview, setShowPreview] = useState(false);
 
   const [values, setValues] = useState({
     appEnabled: settings.appEnabled,
@@ -465,26 +579,6 @@ export default function Settings() {
     }
   }, [fetcher.data, shopify]);
 
-  const toggle = (field) => {
-    setValues((prev) => {
-      if (field === "appEnabled") {
-        const newStatus = !prev.appEnabled;
-        if (!newStatus) {
-          return {
-            appEnabled: false,
-            googleEnabled: false,
-            twitterEnabled: false,
-            facebookEnabled: false,
-            linkedinEnabled: false,
-            amazonEnabled: false,
-          };
-        }
-        return { ...prev, appEnabled: true };
-      }
-      return { ...prev, [field]: !prev[field] };
-    });
-  };
-
   const handleSave = () => {
     const formData = new FormData();
     Object.entries(values).forEach(([key, val]) => formData.set(key, String(val)));
@@ -500,14 +594,24 @@ export default function Settings() {
           <div>
             <h1 style={styles.heading}>Configurations</h1>
           </div>
-          <div style={saveWrapperStyle(!isDirty || isSaving)}>
-            <button
-              style={saveButtonStyle(!isDirty || isSaving)}
-              disabled={!isDirty || isSaving}
-              onClick={handleSave}
-            >
-              {isSaving ? "Saving..." : "Save Settings"}
-            </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <div style={saveWrapperStyle(false)}>
+              <button
+                style={saveButtonStyle(false)}
+                onClick={() => setShowPreview(true)}
+              >
+                Login Preview
+              </button>
+            </div>
+            <div style={saveWrapperStyle(!isDirty || isSaving)}>
+              <button
+                style={saveButtonStyle(!isDirty || isSaving)}
+                disabled={!isDirty || isSaving}
+                onClick={handleSave}
+              >
+                {isSaving ? "Saving..." : "Save Settings"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -582,6 +686,14 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {showPreview && (
+        <LoginPreviewModal
+          values={values}
+          settings={settings}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </s-page>
   );
 }

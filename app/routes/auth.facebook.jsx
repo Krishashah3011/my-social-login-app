@@ -13,7 +13,7 @@ export async function loader({ request }) {
     ? await db.shopSettings.findUnique({ where: { shop } })
     : null;
 
-  if (settings && !settings.facebookEnabled) {
+  if (settings && (!settings.appEnabled || !settings.facebookEnabled)) {
     console.log("BLOCKED: Facebook login attempted while disabled");
     const backToSelector =
       `/select-provider?` +

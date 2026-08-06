@@ -13,7 +13,7 @@ export async function loader({ request }) {
     ? await db.shopSettings.findUnique({ where: { shop } })
     : null;
 
-  if (settings && !settings.googleEnabled) {
+  if (settings && (!settings.appEnabled || !settings.googleEnabled)) {
     console.log("BLOCKED: Google login attempted while disabled");
     const backToSelector =
       `/select-provider?` +
