@@ -642,7 +642,7 @@ function ClientSettingsCard({
           />
         </div>
         <div>
-          <div style={stylesML.clientFieldLabel}>Callback URL</div>
+          <div style={stylesML.clientFieldLabel}>Redirect URL</div>
           <input
             type="text"
             style={stylesML.clientInput}
@@ -1033,7 +1033,7 @@ export default function Settings() {
         {activeTabML === "client" && (
         <div style={stylesML.innerCard}>
           <div style={stylesML.subLabel}>
-            Enter your own OAuth Client ID, Client Secret and Callback URL for each provider.
+            Enter your own OAuth Client ID, Client Secret and Redirect URL for each provider.
             Drag a card by its handle to change the order providers appear in on your storefront
             login screen.
           </div>
