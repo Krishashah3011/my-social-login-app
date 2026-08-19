@@ -1,13 +1,11 @@
-# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
 client_id = "cce0e3246f51bf37d4e0ee5e1bc8ed11"
 name = "Milople Social Login"
 application_url = "https://example.com"
 embedded = true
 
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = ""
+
+scopes = "read_customers,read_files,read_themes,write_customers,write_files,write_metaobject_definitions,write_metaobjects,write_products"
 optional_scopes = [ ]
 use_legacy_install_flow = false
 
