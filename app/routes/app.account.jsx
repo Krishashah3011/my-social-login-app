@@ -23,6 +23,7 @@ export const loader = async ({ request: requestML }) => {
 
   return {
     shop: sessionML.shop,
+    registered: settingsML.registered,
     username: settingsML.username || "",
     accountEmail: settingsML.accountEmail || "",
     plan: settingsML.plan || "",
@@ -38,9 +39,28 @@ export const action = async ({ request: requestML }) => {
   if (intentML === "delete") {
     const updatedML = await db.shopSettings.update({
       where: { shop: sessionML.shop },
-      data: { username: "", accountEmail: "" },
+      data: { username: "", accountEmail: "", registered: false },
     });
     return { updated: updatedML, deleted: true };
+  }
+
+  if (intentML === "register") {
+    const usernameML = (formDataML.get("username") || "").toString().trim();
+    const accountEmailML = (formDataML.get("accountEmail") || "").toString().trim();
+
+    if (!usernameML || !accountEmailML) {
+      return { error: "Username and email are required" };
+    }
+
+    const updatedML = await db.shopSettings.update({
+      where: { shop: sessionML.shop },
+      data: {
+        username: usernameML,
+        accountEmail: accountEmailML,
+        registered: true,
+      },
+    });
+    return { updated: updatedML, registered: true };
   }
 
   const fieldML = formDataML.get("field");
@@ -189,6 +209,70 @@ const stylesML = {
     background: "none",
     cursor: "pointer",
   },
+  registerHeading: {
+    fontSize: "20px",
+    fontWeight: 600,
+    color: "#000",
+    marginBottom: "20px",
+  },
+  registerBox: {
+    background: "#fff",
+    border: "1px solid #dbdbdb",
+    borderRadius: "8px",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  registerFieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+  registerLabel: {
+    fontSize: "14px",
+    fontWeight: 500,
+    color: "#000",
+  },
+  registerInputBox: {
+    background: "#fff",
+    border: "1px solid #dbdbdb",
+    borderRadius: "8px",
+    height: "44px",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "0 14px",
+  },
+  registerInput: {
+    flex: 1,
+    fontSize: "14px",
+    color: "#000",
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontFamily: "inherit",
+  },
+  registerButtonWrap: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "4px",
+  },
+  registerButton: {
+    background: BLUE_ML,
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    padding: "12px 32px",
+    fontSize: "15px",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  registerError: {
+    fontSize: "13px",
+    color: "#C0392B",
+    margin: 0,
+  },
 };
 
 function EditableField({ icon, label, value, field, onSave, saving }) {
@@ -243,15 +327,88 @@ function EditableField({ icon, label, value, field, onSave, saving }) {
   );
 }
 
+function CreateAccountForm({ fetcher: fetcherML, saving: savingML }) {
+  const [usernameDraftML, setUsernameDraftML] = useState("");
+  const [emailDraftML, setEmailDraftML] = useState("");
+
+  const errorML = fetcherML.data?.error;
+
+  const handleSubmitML = (eML) => {
+    eML.preventDefault();
+    if (!usernameDraftML.trim() || !emailDraftML.trim()) return;
+
+    fetcherML.submit(
+      { intent: "register", username: usernameDraftML, accountEmail: emailDraftML },
+      { method: "POST" },
+    );
+  };
+
+  return (
+    <div style={stylesML.outerCard}>
+      <div style={stylesML.registerHeading}>Create Account</div>
+
+      <form onSubmit={handleSubmitML}>
+        <div style={stylesML.registerBox}>
+          <div style={stylesML.registerFieldGroup}>
+            <span style={stylesML.registerLabel}>Username</span>
+            <div style={stylesML.registerInputBox}>
+              <PersonIcon />
+              <input
+                style={stylesML.registerInput}
+                placeholder="Enter username"
+                value={usernameDraftML}
+                disabled={savingML}
+                onChange={(eML) => setUsernameDraftML(eML.target.value)}
+              />
+            </div>
+          </div>
+
+          <div style={stylesML.registerFieldGroup}>
+            <span style={stylesML.registerLabel}>Email</span>
+            <div style={stylesML.registerInputBox}>
+              <MailIcon />
+              <input
+                style={stylesML.registerInput}
+                type="email"
+                placeholder="Enter email"
+                value={emailDraftML}
+                disabled={savingML}
+                onChange={(eML) => setEmailDraftML(eML.target.value)}
+              />
+            </div>
+          </div>
+
+          {errorML && <p style={stylesML.registerError}>{errorML}</p>}
+
+          <div style={stylesML.registerButtonWrap}>
+            <button type="submit" style={stylesML.registerButton} disabled={savingML}>
+              {savingML ? "Creating..." : "Create Account"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function Account() {
-  const { shop: shopML, username: usernameML, accountEmail: accountEmailML, plan: planML, subscriptionId: subscriptionIdML } = useLoaderData();
+  const {
+    shop: shopML,
+    registered: registeredML,
+    username: usernameML,
+    accountEmail: accountEmailML,
+    plan: planML,
+    subscriptionId: subscriptionIdML,
+  } = useLoaderData();
   const fetcherML = useFetcher();
   const shopifyML = useAppBridge();
 
   const savingML = fetcherML.state !== "idle";
 
   useEffect(() => {
-    if (fetcherML.data?.updated && !fetcherML.data?.deleted) {
+    if (fetcherML.data?.registered) {
+      shopifyML.toast.show("Account created");
+    } else if (fetcherML.data?.updated && !fetcherML.data?.deleted) {
       shopifyML.toast.show("Saved");
     }
     if (fetcherML.data?.deleted) {
@@ -272,6 +429,15 @@ export default function Account() {
       fetcherML.submit({ intent: "delete" }, { method: "POST" });
     }
   };
+
+  if (!registeredML) {
+    return (
+      <s-page heading="Account">
+        <TopIconNav active="account" />
+        <CreateAccountForm fetcher={fetcherML} saving={savingML} />
+      </s-page>
+    );
+  }
 
   return (
     <s-page heading="Account">

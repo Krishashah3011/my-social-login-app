@@ -35,6 +35,18 @@ const ChevronIconML = ({ openML }) => (
   </svg>
 );
 
+const CheckIconML = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M2.5 7.2L5.4 10L11.5 3.8"
+      stroke="#1F7A3F"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const ArrowRightIconML = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
@@ -136,9 +148,30 @@ const stylesML = {
     textDecoration: "none",
     whiteSpace: "nowrap",
   },
+  stepDivider: {
+    border: "none",
+    borderTop: `1px solid ${BORDERML}`,
+    margin: "18px 0",
+  },
+  donePill: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "8px 14px",
+    background: "#E3F4E9",
+    borderRadius: "8px",
+    color: "#1F7A3F",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 600,
+    fontSize: "13px",
+  },
 };
 
-export default function GetStartedGuide({ appName: appNameML, embedDeepLink: embedDeepLinkML }) {
+export default function GetStartedGuide({
+  appName: appNameML,
+  embedDeepLink: embedDeepLinkML,
+  registered: registeredML = false,
+}) {
   const [openML, setOpenML] = useState(true);
 
   return (
@@ -187,6 +220,29 @@ export default function GetStartedGuide({ appName: appNameML, embedDeepLink: emb
               Activate App Embed
               <ArrowRightIconML />
             </a>
+          </div>
+
+          <hr style={stylesML.stepDivider} />
+
+          <div>
+            <p style={stylesML.stepTitle}>2. Create Your Account</p>
+
+            <p style={stylesML.stepDescription}>
+              Register your username and email so you can manage this app
+              and unlock the Settings page.
+            </p>
+
+            {registeredML ? (
+              <span style={stylesML.donePill}>
+                <CheckIconML />
+                Completed
+              </span>
+            ) : (
+              <a href="/app/account" style={stylesML.stepButton}>
+                Login / Register
+                <ArrowRightIconML />
+              </a>
+            )}
           </div>
         </div>
       )}

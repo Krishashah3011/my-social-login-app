@@ -174,13 +174,11 @@ export const loader = async ({ request: requestML }) => {
     Email: emailByDayML[dayML],
   }));
 
-  // TODO: confirm this UUID/handle pair against Partner Dashboard once deployed.
-  // Format: {theme-extension-uuid}/{block-handle}
-// uid comes from extensions/social-login-widget/shopify.extension.toml
-const embedExtensionUuidML = "5cbbea68-b1fc-5b70-4f63-8fd90c3685ac53138c82";
-const embedBlockHandleML = "social_login";
+  // uid comes from extensions/social-login-widget/shopify.extension.toml
+  const embedExtensionUuidML = "5cbbea68-b1fc-5b70-4f63-8fd90c3685ac53138c82";
+  const embedBlockHandleML = "social_login";
 
-const embedDeepLinkML = `https://${sessionML.shop}/admin/themes/current/editor?context=apps&appEmbed=${embedExtensionUuidML}/${embedBlockHandleML}`;
+  const embedDeepLinkML = `https://${sessionML.shop}/admin/themes/current/editor?context=apps&appEmbed=${embedExtensionUuidML}/${embedBlockHandleML}`;
 
   return {
     settings: settingsML,
@@ -189,6 +187,7 @@ const embedDeepLinkML = `https://${sessionML.shop}/admin/themes/current/editor?c
     totalsByProvider: totalsByProviderML,
     trend: trendML,
     embedDeepLink: embedDeepLinkML,
+    registered: settingsML.registered,
   };
 };
 
@@ -343,6 +342,7 @@ export default function Index() {
     totalsByProvider: totalsByProviderML,
     trend: trendML,
     embedDeepLink: embedDeepLinkML,
+    registered: registeredML,
   } = useLoaderData();
 
   return (
@@ -358,8 +358,11 @@ export default function Index() {
       <GetStartedGuide
         appName="Milople Social Login App"
         embedDeepLink={embedDeepLinkML}
+        registered={registeredML}
       />
 
+      {registeredML && (
+      <>
       <div style={stylesML.card}>
         <h2 style={stylesML.sectionHeading}>
           Your Setup Progress
@@ -541,6 +544,8 @@ export default function Index() {
           </ResponsiveContainer>
         </div>
       </div>
+      </>
+      )}
           </s-page>
   );
 }

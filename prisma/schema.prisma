@@ -115,6 +115,7 @@ model ShopSettings {
   amazonEnabled   Boolean  @default(true)
   appEnabled      Boolean  @default(true)
   serialKey       String?  @unique
+  registered      Boolean  @default(false)
   username        String?
   accountEmail    String?
   googleLogo      String?
