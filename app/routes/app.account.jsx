@@ -170,7 +170,7 @@ const stylesML = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "inherit",
+    fontFamily: "Inter, sans-serif",
   },
   editBtn: {
     background: "none",
@@ -251,7 +251,7 @@ const stylesML = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "inherit",
+    fontFamily: "Inter, sans-serif",
   },
   registerButtonWrap: {
     display: "flex",
