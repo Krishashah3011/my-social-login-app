@@ -177,7 +177,10 @@ export default function GetStartedGuide({
 
   return (
     <div style={stylesML.card}>
-      <div style={stylesML.headerRow}>
+      <div
+        style={{ ...stylesML.headerRow, cursor: "pointer" }}
+        onClick={() => setOpenML(!openML)}
+      >
         <div style={stylesML.iconBox}>
           <InfoIconML />
         </div>
@@ -189,7 +192,6 @@ export default function GetStartedGuide({
         <button
           type="button"
           style={stylesML.chevronButton}
-          onClick={() => setOpenML(!openML)}
           aria-label={openML ? "Collapse guide" : "Expand guide"}
         >
           <ChevronIconML openML={openML} />
@@ -204,7 +206,32 @@ export default function GetStartedGuide({
           </p>
 
           <div>
-            <p style={stylesML.stepTitle}>1. Enable Social Login App Embed</p>
+            <p style={stylesML.stepTitle}>1. Create Your Account</p>
+
+            <p style={stylesML.stepDescription}>
+              Register your username and email so you can manage this app
+              and unlock the Settings page.
+            </p>
+
+            {registeredML ? (
+              <span style={stylesML.donePill}>
+                <CheckIconML />
+                Completed
+              </span>
+            ) : (
+              <Link to="/app/account" style={stylesML.stepButton}>
+                Go to Account
+                <ArrowRightIconML />
+              </Link>
+            )}
+          </div>
+
+          <hr style={stylesML.stepDivider} />
+
+          <div>
+            <p style={stylesML.stepTitle}>
+              2. Enable Social Login App Embed
+            </p>
 
             <p style={stylesML.stepDescription}>
               The app must be enabled in your theme's "App embeds" section to
@@ -226,7 +253,7 @@ export default function GetStartedGuide({
           <hr style={stylesML.stepDivider} />
 
           <div>
-            <p style={stylesML.stepTitle}>2. Enable App Status</p>
+            <p style={stylesML.stepTitle}>3. Enable App Status</p>
 
             <p style={stylesML.stepDescription}>
               Visit Settings to make sure the app status is turned on and
@@ -242,7 +269,7 @@ export default function GetStartedGuide({
           <hr style={stylesML.stepDivider} />
 
           <div>
-            <p style={stylesML.stepTitle}>3. Customize App Icons</p>
+            <p style={stylesML.stepTitle}>4. Customize App Icons</p>
 
             <p style={stylesML.stepDescription}>
               In Settings, upload custom icons for each provider to replace
@@ -253,29 +280,6 @@ export default function GetStartedGuide({
               Go to Settings
               <ArrowRightIconML />
             </Link>
-          </div>
-
-          <hr style={stylesML.stepDivider} />
-
-          <div>
-            <p style={stylesML.stepTitle}>4. Create Your Account</p>
-
-            <p style={stylesML.stepDescription}>
-              Register your username and email so you can manage this app
-              and unlock the Settings page.
-            </p>
-
-            {registeredML ? (
-              <span style={stylesML.donePill}>
-                <CheckIconML />
-                Completed
-              </span>
-            ) : (
-              <Link to="/app/account" style={stylesML.stepButton}>
-                Go to Account
-                <ArrowRightIconML />
-              </Link>
-            )}
           </div>
         </div>
       )}
