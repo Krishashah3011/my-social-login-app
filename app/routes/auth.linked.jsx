@@ -1,5 +1,6 @@
 import { redirect } from "react-router";
 import db from "../db.server";
+import { getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -25,12 +26,15 @@ export async function loader({ request: requestML }) {
   const hostML =
     requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrlML =
-    `https://${hostML}/linked/callback`;
+  const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
+    settingsML,
+    "linkedin",
+    `https://${hostML}/linked/callback`
+  );
 
   const linkedURLML =
     "https://www.linkedin.com/oauth/v2/authorization?" +
-    `client_id=${process.env.linked_CLIENT_ID}` +
+    `client_id=${clientIdML}` +
     `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=openid%20profile%20email` +

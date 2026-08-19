@@ -1,4 +1,5 @@
 import db from "../db.server";
+import { getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -22,11 +23,16 @@ export async function loader({ request: requestML }) {
   }
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
-  const callbackUrlML = `https://${hostML}/amazon/callback`;
+
+  const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
+    settingsML,
+    "amazon",
+    `https://${hostML}/amazon/callback`
+  );
 
   const amazonURLML =
     `https://www.amazon.com/ap/oa?` +
-    `client_id=${process.env.AMAZON_CLIENT_ID}` +
+    `client_id=${clientIdML}` +
     `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=profile` +

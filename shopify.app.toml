@@ -1,6 +1,6 @@
 client_id = "5ef015cc5ac6f3a7566b824319ba99c6"
 <<<<<<< HEAD
-application_url = "https://petite-publicity-roommates-accomplished.trycloudflare.com"
+application_url = "https://inspections-preserve-info-exceed.trycloudflare.com"
 =======
 application_url = "https://stereo-image-texture-revolution.trycloudflare.com/facebook/callback"
 >>>>>>> 638db5406dfe4b30c6f9f0db02bf659a161cd754
@@ -47,7 +47,7 @@ api_version = "2026-10"
 
 [auth]
 <<<<<<< HEAD
-redirect_urls = [ "https://petite-publicity-roommates-accomplished.trycloudflare.com" ]
+redirect_urls = [ "https://inspections-preserve-info-exceed.trycloudflare.com" ]
 =======
 redirect_urls = [ "https://stereo-image-texture-revolution.trycloudflare.com/facebook/callback" ]
 >>>>>>> 638db5406dfe4b30c6f9f0db02bf659a161cd754

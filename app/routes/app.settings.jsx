@@ -40,9 +40,22 @@ export const loader = async ({ request: requestML }) => {
   return { settings: settingsML, registered: settingsML.registered };
 };
 
+const CLIENT_PROVIDERS_ML = ["google", "facebook", "twitter", "amazon", "linkedin"];
+
 export const action = async ({ request: requestML }) => {
   const { session: sessionML } = await authenticate.admin(requestML);
   const formDataML = await requestML.formData();
+
+  const clientDataML = {};
+  CLIENT_PROVIDERS_ML.forEach((providerML) => {
+    clientDataML[`${providerML}ClientId`] = formDataML.get(`${providerML}ClientId`) || null;
+    clientDataML[`${providerML}ClientSecret`] = formDataML.get(`${providerML}ClientSecret`) || null;
+    clientDataML[`${providerML}CallbackUrl`] = formDataML.get(`${providerML}CallbackUrl`) || null;
+    const sortOrderRawML = formDataML.get(`${providerML}SortOrder`);
+    if (sortOrderRawML !== null) {
+      clientDataML[`${providerML}SortOrder`] = parseInt(sortOrderRawML, 10);
+    }
+  });
 
   const updatedML = await db.shopSettings.update({
     where: { shop: sessionML.shop },
@@ -53,6 +66,7 @@ export const action = async ({ request: requestML }) => {
       facebookEnabled: formDataML.get("facebookEnabled") === "true",
       linkedinEnabled: formDataML.get("linkedinEnabled") === "true",
       amazonEnabled: formDataML.get("amazonEnabled") === "true",
+      ...clientDataML,
     },
   });
 
@@ -141,6 +155,19 @@ function UploadIcon() {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M9.7498 12.45V0.75M7.0498 3.9L9.7498 0.75L12.4498 3.9" stroke="#073E74" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M6.15 18.75H13.35C15.8952 18.75 17.1687 18.75 17.9589 17.9598C18.75 17.1678 18.75 15.8961 18.75 13.35V12.45C18.75 9.90476 18.75 8.63216 17.9589 7.84106C17.2677 7.14986 16.2075 7.06256 14.25 7.05176M5.25 7.05176C3.2925 7.06256 2.2323 7.14986 1.5411 7.84106C0.75 8.63216 0.75 9.90476 0.75 12.45V13.35C0.75 15.8961 0.75 17.1687 1.5411 17.9598C1.8111 18.2298 2.1369 18.4071 2.55 18.5241" stroke="#073E74" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function GripIcon() {
+  return (
+    <svg width="14" height="20" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="4" cy="3" r="1.5" fill={GRAY_OFF_ML} />
+      <circle cx="10" cy="3" r="1.5" fill={GRAY_OFF_ML} />
+      <circle cx="4" cy="10" r="1.5" fill={GRAY_OFF_ML} />
+      <circle cx="10" cy="10" r="1.5" fill={GRAY_OFF_ML} />
+      <circle cx="4" cy="17" r="1.5" fill={GRAY_OFF_ML} />
+      <circle cx="10" cy="17" r="1.5" fill={GRAY_OFF_ML} />
     </svg>
   );
 }
@@ -360,7 +387,74 @@ const stylesML = {
     cursor: "pointer",
     userSelect: "none",
   },
+  tabBar: {
+    display: "flex",
+    gap: "10px",
+    padding: "8px",
+    border: `1px solid ${BORDER_ML}`,
+    borderRadius: "10px",
+    background: "#fff",
+    marginBottom: "16px",
+  },
+  clientCard: {
+    border: `1px solid ${BORDER_ML}`,
+    borderRadius: "6px",
+    background: "#fff",
+    marginBottom: "10px",
+    overflow: "hidden",
+  },
+  clientCardHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "12px 10px",
+    background: LICENSE_BG_ML,
+  },
+  clientCardBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    padding: "14px",
+  },
+  clientFieldLabel: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "13px",
+    fontWeight: 500,
+    color: TEXT_DARK_ML,
+    marginBottom: "4px",
+  },
+  clientInput: {
+    width: "100%",
+    padding: "9px 10px",
+    borderRadius: "6px",
+    border: `1px solid ${BORDER_ML}`,
+    fontFamily: "Inter, sans-serif",
+    fontSize: "14px",
+    color: TEXT_DARK_ML,
+    boxSizing: "border-box",
+  },
+  dragHandle: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "grab",
+    flexShrink: 0,
+  },
 };
+
+function tabButtonStyleML(activeML) {
+  return {
+    padding: "10px 20px",
+    borderRadius: "6px",
+    border: "none",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: "pointer",
+    background: activeML ? BLUE_ML : "#ECECEC",
+    color: activeML ? "#fff" : TEXT_DARK_ML,
+  };
+}
 
 function saveWrapperStyleML(disabledML) {
   return {
@@ -478,6 +572,85 @@ function ProviderRow({ providerKey, name, subtitle, checked, onToggle, logoUrl }
       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
         <LogoUploadButton providerKey={providerKey} enabled={checked} hasCustomLogo={!!logoUrl} />
         <ToggleSwitch checked={checked} onChange={onToggle} />
+      </div>
+    </div>
+  );
+}
+
+const PROVIDER_NAMES_ML = {
+  google: "Google",
+  facebook: "Facebook",
+  twitter: "X (Twitter)",
+  amazon: "Amazon",
+  linkedin: "Linkedin",
+};
+
+function ClientSettingsCard({
+  providerKey,
+  positionML,
+  valuesML,
+  onFieldChangeML,
+  onDragStartML,
+  onDragOverML,
+  onDropML,
+  onDragEndML,
+  isDraggingML,
+}) {
+  const DefaultIconML = DEFAULT_ICONS_ML[providerKey];
+
+  return (
+    <div
+      style={{ ...stylesML.clientCard, opacity: isDraggingML ? 0.5 : 1 }}
+      draggable
+      onDragStart={onDragStartML}
+      onDragOver={onDragOverML}
+      onDrop={onDropML}
+      onDragEnd={onDragEndML}
+    >
+      <div style={stylesML.clientCardHeader}>
+        <span style={stylesML.dragHandle} title="Drag to reorder">
+          <GripIcon />
+        </span>
+        <div style={stylesML.logoPreview}>
+          <DefaultIconML />
+        </div>
+        <div style={stylesML.label}>{PROVIDER_NAMES_ML[providerKey]}</div>
+        <div style={{ marginLeft: "auto", ...stylesML.subLabel }}>
+          Sort order: {positionML}
+        </div>
+      </div>
+
+      <div style={stylesML.clientCardBody}>
+        <div>
+          <div style={stylesML.clientFieldLabel}>Client ID</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.clientId}
+            onChange={(eML) => onFieldChangeML(providerKey, "clientId", eML.target.value)}
+            placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Client ID`}
+          />
+        </div>
+        <div>
+          <div style={stylesML.clientFieldLabel}>Client Secret</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.clientSecret}
+            onChange={(eML) => onFieldChangeML(providerKey, "clientSecret", eML.target.value)}
+            placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Client Secret`}
+          />
+        </div>
+        <div>
+          <div style={stylesML.clientFieldLabel}>Callback URL</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.callbackUrl}
+            onChange={(eML) => onFieldChangeML(providerKey, "callbackUrl", eML.target.value)}
+            placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Callback URL`}
+          />
+        </div>
       </div>
     </div>
   );
@@ -608,11 +781,31 @@ function LockIcon() {
   );
 }
 
+function buildClientValuesML(settingsML) {
+  const resultML = {};
+  CLIENT_PROVIDERS_ML.forEach((providerML) => {
+    resultML[providerML] = {
+      clientId: settingsML[`${providerML}ClientId`] || "",
+      clientSecret: settingsML[`${providerML}ClientSecret`] || "",
+      callbackUrl: settingsML[`${providerML}CallbackUrl`] || "",
+      sortOrder: settingsML[`${providerML}SortOrder`] ?? 1,
+    };
+  });
+  return resultML;
+}
+
+function buildOrderML(settingsML) {
+  return [...CLIENT_PROVIDERS_ML].sort(
+    (aML, bML) => (settingsML[`${aML}SortOrder`] ?? 1) - (settingsML[`${bML}SortOrder`] ?? 1)
+  );
+}
+
 export default function Settings() {
   const { settings: settingsML, registered: registeredML } = useLoaderData();
   const fetcherML = useFetcher();
   const shopifyML = useAppBridge();
   const [showPreviewML, setShowPreviewML] = useState(false);
+  const [activeTabML, setActiveTabML] = useState("general");
 
   const [valuesML, setValuesML] = useState({
     appEnabled: settingsML.appEnabled,
@@ -623,7 +816,16 @@ export default function Settings() {
     amazonEnabled: settingsML.amazonEnabled,
   });
 
-  const isDirtyML = Object.keys(valuesML).some((keyML) => valuesML[keyML] !== settingsML[keyML]);
+  const [clientValuesML, setClientValuesML] = useState(() => buildClientValuesML(settingsML));
+  const [orderML, setOrderML] = useState(() => buildOrderML(settingsML));
+  const dragIndexRef = useRef(null);
+  const [draggingIndexML, setDraggingIndexML] = useState(null);
+
+  const isGeneralDirtyML = Object.keys(valuesML).some((keyML) => valuesML[keyML] !== settingsML[keyML]);
+  const isClientDirtyML =
+    JSON.stringify(clientValuesML) !== JSON.stringify(buildClientValuesML(settingsML)) ||
+    JSON.stringify(orderML) !== JSON.stringify(buildOrderML(settingsML));
+  const isDirtyML = isGeneralDirtyML || isClientDirtyML;
   const isSavingML = fetcherML.state !== "idle";
 
   useEffect(() => {
@@ -636,9 +838,53 @@ export default function Settings() {
     setValuesML((prevML) => ({ ...prevML, [keyML]: !prevML[keyML] }));
   };
 
+  const handleClientFieldChangeML = (providerKeyML, fieldML, valML) => {
+    setClientValuesML((prevML) => ({
+      ...prevML,
+      [providerKeyML]: { ...prevML[providerKeyML], [fieldML]: valML },
+    }));
+  };
+
+  const handleDragStartML = (indexML) => {
+    dragIndexRef.current = indexML;
+    setDraggingIndexML(indexML);
+  };
+
+  const handleDragOverML = (eML) => {
+    eML.preventDefault();
+  };
+
+  const handleDropML = (dropIndexML) => {
+    const fromIndexML = dragIndexRef.current;
+    if (fromIndexML === null || fromIndexML === dropIndexML) return;
+
+    setOrderML((prevML) => {
+      const nextML = [...prevML];
+      const [movedML] = nextML.splice(fromIndexML, 1);
+      nextML.splice(dropIndexML, 0, movedML);
+      return nextML;
+    });
+    dragIndexRef.current = null;
+    setDraggingIndexML(null);
+  };
+
+  const handleDragEndML = () => {
+    dragIndexRef.current = null;
+    setDraggingIndexML(null);
+  };
+
   const handleSaveML = () => {
     const formDataML = new FormData();
     Object.entries(valuesML).forEach(([keyML, valML]) => formDataML.set(keyML, String(valML)));
+
+    orderML.forEach((providerKeyML, indexML) => {
+      const fieldsML = clientValuesML[providerKeyML];
+      formDataML.set(`${providerKeyML}ClientId`, fieldsML.clientId);
+      formDataML.set(`${providerKeyML}ClientSecret`, fieldsML.clientSecret);
+      formDataML.set(`${providerKeyML}CallbackUrl`, fieldsML.callbackUrl);
+      formDataML.set(`${providerKeyML}SortOrder`, String(indexML + 1));
+    });
+
     fetcherML.submit(formDataML, { method: "POST" });
   };
 
@@ -694,6 +940,24 @@ export default function Settings() {
           </div>
         </div>
 
+        <div style={stylesML.tabBar}>
+          <button
+            type="button"
+            style={tabButtonStyleML(activeTabML === "general")}
+            onClick={() => setActiveTabML("general")}
+          >
+            General Settings
+          </button>
+          <button
+            type="button"
+            style={tabButtonStyleML(activeTabML === "client")}
+            onClick={() => setActiveTabML("client")}
+          >
+            Client Settings
+          </button>
+        </div>
+
+        {activeTabML === "general" && (
         <div style={stylesML.innerCard}>
           <div style={stylesML.licenseBox}>
             <div style={stylesML.licenseTitle}>License and Status</div>
@@ -764,6 +1028,34 @@ export default function Settings() {
             />
           </div>
         </div>
+        )}
+
+        {activeTabML === "client" && (
+        <div style={stylesML.innerCard}>
+          <div style={stylesML.subLabel}>
+            Enter your own OAuth Client ID, Client Secret and Callback URL for each provider.
+            Drag a card by its handle to change the order providers appear in on your storefront
+            login screen.
+          </div>
+
+          <div>
+            {orderML.map((providerKeyML, indexML) => (
+              <ClientSettingsCard
+                key={providerKeyML}
+                providerKey={providerKeyML}
+                positionML={indexML + 1}
+                valuesML={clientValuesML[providerKeyML]}
+                onFieldChangeML={handleClientFieldChangeML}
+                onDragStartML={() => handleDragStartML(indexML)}
+                onDragOverML={handleDragOverML}
+                onDropML={() => handleDropML(indexML)}
+                onDragEndML={handleDragEndML}
+                isDraggingML={draggingIndexML === indexML}
+              />
+            ))}
+          </div>
+        </div>
+        )}
       </div>
 
       {showPreviewML && (

@@ -1,4 +1,5 @@
 import db from "../db.server";
+import { getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -24,12 +25,15 @@ export async function loader({ request: requestML }) {
   const hostML =
     requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrlML =
-    `https://${hostML}/google/callback`;
+  const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
+    settingsML,
+    "google",
+    `https://${hostML}/google/callback`
+  );
 
   const googleURLML =
     `https://accounts.google.com/o/oauth2/v2/auth?` +
-    `client_id=${process.env.GOOGLE_CLIENT_ID}` +
+    `client_id=${clientIdML}` +
     `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=email profile openid` +

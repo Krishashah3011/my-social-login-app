@@ -4,6 +4,7 @@ import { unauthenticated } from "../shopify.server";
 import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 import { getVerifier } from "../lib/twitterPkce.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -12,7 +13,10 @@ export async function loader({ request: requestML }) {
   const stateDataML = urlML.searchParams.get("state");
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
-  const callbackUrlML = `https://${hostML}/twitter/callback`;
+
+  const settingsML = await getShopSettingsML();
+  const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
+    getProviderCredentialsML(settingsML, "twitter", `https://${hostML}/twitter/callback`);
 
   if (!codeML) {
     return new Response("No Twitter authorization code received", { status: 400 });
@@ -36,12 +40,12 @@ export async function loader({ request: requestML }) {
       "Content-Type": "application/x-www-form-urlencoded",
       Authorization:
         "Basic " +
-        Buffer.from(`${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`).toString("base64"),
+        Buffer.from(`${clientIdML}:${clientSecretML}`).toString("base64"),
     },
     body: new URLSearchParams({
       code: codeML,
       grant_type: "authorization_code",
-      client_id: process.env.X_CLIENT_ID,
+      client_id: clientIdML,
       redirect_uri: callbackUrlML,
       code_verifier: codeVerifierML,
     }),

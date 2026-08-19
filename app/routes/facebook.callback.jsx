@@ -3,6 +3,7 @@ import prisma from "../db.server";
 import { unauthenticated } from "../shopify.server";
 import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -13,8 +14,9 @@ export async function loader({ request: requestML }) {
   const hostML =
     requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrlML =
-    `https://${hostML}/facebook/callback`;
+  const settingsML = await getShopSettingsML();
+  const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
+    getProviderCredentialsML(settingsML, "facebook", `https://${hostML}/facebook/callback`);
 
   if (!codeML) {
     return new Response("No authorization code received", {
@@ -34,9 +36,8 @@ export async function loader({ request: requestML }) {
   const tokenResponseML = await fetch(
     "https://graph.facebook.com/v23.0/oauth/access_token?" +
       new URLSearchParams({
-        client_id: process.env.FACEBOOK_CLIENT_ID,
-        client_secret:
-          process.env.FACEBOOK_CLIENT_SECRET,
+        client_id: clientIdML,
+        client_secret: clientSecretML,
         redirect_uri: callbackUrlML,
         code: codeML,
       })

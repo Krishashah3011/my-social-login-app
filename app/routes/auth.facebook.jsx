@@ -1,4 +1,5 @@
 import db from "../db.server";
+import { getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -24,12 +25,15 @@ export async function loader({ request: requestML }) {
   const hostML =
     requestML.headers.get("x-forwarded-host") || urlML.host;
 
-  const callbackUrlML =
-    `https://${hostML}/facebook/callback`;
+  const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
+    settingsML,
+    "facebook",
+    `https://${hostML}/facebook/callback`
+  );
 
   const facebookURLML =
     `https://www.facebook.com/v23.0/dialog/oauth?` +
-    `client_id=${process.env.FACEBOOK_CLIENT_ID}` +
+    `client_id=${clientIdML}` +
     `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=email,public_profile` +

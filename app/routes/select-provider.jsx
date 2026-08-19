@@ -24,6 +24,13 @@ export const loader = async () => {
       twitter: (settingsML?.appEnabled ?? true) && (settingsML?.twitterEnabled ?? true),
       amazon: (settingsML?.appEnabled ?? true) && (settingsML?.amazonEnabled ?? true),
     },
+    sortOrder: {
+      google: settingsML?.googleSortOrder ?? 1,
+      linkedin: settingsML?.linkedinSortOrder ?? 2,
+      facebook: settingsML?.facebookSortOrder ?? 3,
+      twitter: settingsML?.twitterSortOrder ?? 4,
+      amazon: settingsML?.amazonSortOrder ?? 5,
+    },
   };
 };
 
@@ -153,8 +160,16 @@ const stylesML = {
   },
 };
 
+const PROVIDERS_ML = [
+  { key: "google", routeKey: "google", title: "Continue with Google", alt: "Google", Icon: GoogleIcon },
+  { key: "linkedin", routeKey: "linked", title: "Continue with LinkedIn", alt: "LinkedIn", Icon: LinkedInIcon },
+  { key: "facebook", routeKey: "facebook", title: "Continue with Facebook", alt: "Facebook", Icon: FacebookIcon },
+  { key: "twitter", routeKey: "twitter", title: "Continue with X", alt: "X", Icon: XIcon },
+  { key: "amazon", routeKey: "amazon", title: "Continue with Amazon", alt: "Amazon", Icon: AmazonIcon },
+];
+
 export default function SelectProvider() {
-  const { logos: logosML, enabled: enabledML } = useLoaderData();
+  const { logos: logosML, enabled: enabledML, sortOrder: sortOrderML } = useLoaderData();
   const [searchParamsML] = useSearchParams();
   const stateML = searchParamsML.get("state") || "";
   const redirect_uriML = searchParamsML.get("redirect_uri") || "";
@@ -221,6 +236,10 @@ export default function SelectProvider() {
     const secML = sML % 60;
     return `${mML}:${secML.toString().padStart(2, "0")}`;
   };
+
+  const orderedProvidersML = [...PROVIDERS_ML]
+    .filter((providerML) => enabledML[providerML.key])
+    .sort((aML, bML) => (sortOrderML[aML.key] ?? 1) - (sortOrderML[bML.key] ?? 1));
 
   return (
     <div style={stylesML.page}>
@@ -305,51 +324,15 @@ export default function SelectProvider() {
         <div style={stylesML.divider}>OR</div>
 
         <div style={stylesML.iconRow}>
-          {enabledML.google && (
-            <a href={socialUrlML("google")} style={stylesML.iconButton} title="Continue with Google">
-              {logosML.google ? (
-                <img src={logosML.google} alt="Google" width="24" height="24" style={{ objectFit: "cover" }} />
+          {orderedProvidersML.map(({ key: keyML, routeKey: routeKeyML, title: titleML, alt: altML, Icon: IconML }) => (
+            <a key={keyML} href={socialUrlML(routeKeyML)} style={stylesML.iconButton} title={titleML}>
+              {logosML[keyML] ? (
+                <img src={logosML[keyML]} alt={altML} width="24" height="24" style={{ objectFit: "cover" }} />
               ) : (
-                <GoogleIcon />
+                <IconML />
               )}
             </a>
-          )}
-          {enabledML.linkedin && (
-            <a href={socialUrlML("linked")} style={stylesML.iconButton} title="Continue with LinkedIn">
-              {logosML.linkedin ? (
-                <img src={logosML.linkedin} alt="LinkedIn" width="24" height="24" style={{ objectFit: "cover" }} />
-              ) : (
-                <LinkedInIcon />
-              )}
-            </a>
-          )}
-          {enabledML.facebook && (
-            <a href={socialUrlML("facebook")} style={stylesML.iconButton} title="Continue with Facebook">
-              {logosML.facebook ? (
-                <img src={logosML.facebook} alt="Facebook" width="24" height="24" style={{ objectFit: "cover" }} />
-              ) : (
-                <FacebookIcon />
-              )}
-            </a>
-          )}
-          {enabledML.twitter && (
-            <a href={socialUrlML("twitter")} style={stylesML.iconButton} title="Continue with X">
-              {logosML.twitter ? (
-                <img src={logosML.twitter} alt="X" width="24" height="24" style={{ objectFit: "cover" }} />
-              ) : (
-                <XIcon />
-              )}
-            </a>
-          )}
-          {enabledML.amazon && (
-            <a href={socialUrlML("amazon")} style={stylesML.iconButton} title="Continue with Amazon">
-              {logosML.amazon ? (
-                <img src={logosML.amazon} alt="Amazon" width="24" height="24" style={{ objectFit: "cover" }} />
-              ) : (
-                <AmazonIcon />
-              )}
-            </a>
-          )}
+          ))}
         </div>
       </div>
     </div>

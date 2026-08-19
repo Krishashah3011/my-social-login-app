@@ -123,6 +123,32 @@ model ShopSettings {
   facebookLogo    String?
   linkedinLogo    String?
   amazonLogo      String?
+
+  googleClientId       String?
+  googleClientSecret   String?
+  googleCallbackUrl    String?
+  googleSortOrder      Int      @default(1)
+
+  facebookClientId     String?
+  facebookClientSecret String?
+  facebookCallbackUrl  String?
+  facebookSortOrder    Int      @default(3)
+
+  twitterClientId      String?
+  twitterClientSecret  String?
+  twitterCallbackUrl   String?
+  twitterSortOrder     Int      @default(4)
+
+  amazonClientId       String?
+  amazonClientSecret   String?
+  amazonCallbackUrl    String?
+  amazonSortOrder      Int      @default(5)
+
+  linkedinClientId     String?
+  linkedinClientSecret String?
+  linkedinCallbackUrl  String?
+  linkedinSortOrder    Int      @default(2)
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

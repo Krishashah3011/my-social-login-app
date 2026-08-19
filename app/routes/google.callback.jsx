@@ -3,6 +3,7 @@ import prisma from "../db.server";
 import { unauthenticated } from "../shopify.server";
 import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -10,7 +11,10 @@ export async function loader({ request: requestML }) {
   const stateDataML = urlML.searchParams.get("state");
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
-  const callbackUrlML = `https://${hostML}/google/callback`;
+
+  const settingsML = await getShopSettingsML();
+  const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
+    getProviderCredentialsML(settingsML, "google", `https://${hostML}/google/callback`);
 
   if (!codeML) {
     return new Response("No authorization code received", { status: 400 });
@@ -30,8 +34,8 @@ export async function loader({ request: requestML }) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        client_id: clientIdML,
+        client_secret: clientSecretML,
         code: codeML,
         grant_type: "authorization_code",
         redirect_uri: callbackUrlML,

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { saveVerifier } from "../lib/twitterPkce.server";
 import db from "../db.server";
+import { getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -24,7 +25,12 @@ export async function loader({ request: requestML }) {
   }
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
-  const callbackUrlML = `https://${hostML}/twitter/callback`;
+
+  const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
+    settingsML,
+    "twitter",
+    `https://${hostML}/twitter/callback`
+  );
 
   const codeVerifierML = crypto.randomBytes(32).toString("hex");
   const codeChallengeML = crypto
@@ -39,7 +45,7 @@ export async function loader({ request: requestML }) {
     `https://x.com/i/oauth2/authorize?` +
     new URLSearchParams({
       response_type: "code",
-      client_id: process.env.X_CLIENT_ID,
+      client_id: clientIdML,
       redirect_uri: callbackUrlML,
       scope: "tweet.read users.read users.email offline.access",
       state: twitterStateML,
