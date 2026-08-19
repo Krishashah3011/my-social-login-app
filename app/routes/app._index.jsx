@@ -346,7 +346,7 @@ export default function Index() {
   } = useLoaderData();
 
   return (
-    <s-page heading="Social Login App">
+    <s-page heading="Social Login App" inlineSize="950px">
       <TopIconNav active="home" />
 
       <img

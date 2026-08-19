@@ -644,7 +644,7 @@ export default function Settings() {
 
   if (!registeredML) {
     return (
-      <s-page>
+      <s-page inlineSize="950px">
         <TopIconNav active="settings" />
 
         <div style={stylesML.outerCard}>
@@ -665,7 +665,7 @@ export default function Settings() {
   }
 
   return (
-    <s-page>
+    <s-page inlineSize="950px">
       <TopIconNav active="settings" />
 
       <div style={stylesML.outerCard}>

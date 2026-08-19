@@ -21,7 +21,9 @@ export default function App() {
         <s-link href="/app">Home</s-link>
       </s-app-nav>
 
-      <Outlet />
+      <div style={{ maxWidth: "950px", width: "100%", margin: "0 auto" }}>
+        <Outlet />
+      </div>
     </AppProvider>
   );
 }

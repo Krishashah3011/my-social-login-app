@@ -432,7 +432,7 @@ export default function Account() {
 
   if (!registeredML) {
     return (
-      <s-page heading="Account">
+      <s-page heading="Account" inlineSize="950px">
         <TopIconNav active="account" />
         <CreateAccountForm fetcher={fetcherML} saving={savingML} />
       </s-page>
@@ -440,7 +440,7 @@ export default function Account() {
   }
 
   return (
-    <s-page heading="Account">
+    <s-page heading="Account" inlineSize="950px">
       <TopIconNav active="account" />
 
       <div style={stylesML.outerCard}>
