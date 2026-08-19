@@ -3,6 +3,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
+import GetStartedGuide from "../components/GetStartedGuide";
 
 import {
   ResponsiveContainer,
@@ -173,12 +174,21 @@ export const loader = async ({ request: requestML }) => {
     Email: emailByDayML[dayML],
   }));
 
+  // TODO: confirm this UUID/handle pair against Partner Dashboard once deployed.
+  // Format: {theme-extension-uuid}/{block-handle}
+// uid comes from extensions/social-login-widget/shopify.extension.toml
+const embedExtensionUuidML = "5cbbea68-b1fc-5b70-4f63-8fd90c3685ac53138c82";
+const embedBlockHandleML = "social_login";
+
+const embedDeepLinkML = `https://${sessionML.shop}/admin/themes/current/editor?context=apps&appEmbed=${embedExtensionUuidML}/${embedBlockHandleML}`;
+
   return {
     settings: settingsML,
     steps: stepsML,
     percentComplete: percentCompleteML,
     totalsByProvider: totalsByProviderML,
     trend: trendML,
+    embedDeepLink: embedDeepLinkML,
   };
 };
 
@@ -332,6 +342,7 @@ export default function Index() {
     percentComplete: percentCompleteML,
     totalsByProvider: totalsByProviderML,
     trend: trendML,
+    embedDeepLink: embedDeepLinkML,
   } = useLoaderData();
 
   return (
@@ -342,6 +353,11 @@ export default function Index() {
         src="/banner.png"
         alt="Welcome to Milople Social Login App"
         style={stylesML.heroBanner}
+      />
+
+      <GetStartedGuide
+        appName="Milople Social Login App"
+        embedDeepLink={embedDeepLinkML}
       />
 
       <div style={stylesML.card}>
