@@ -11,8 +11,9 @@ export async function loader({ request: requestML }) {
   const stateDataML = urlML.searchParams.get("state");
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const shopML = process.env.SHOP_DOMAIN;
 
-  const settingsML = await getShopSettingsML();
+  const settingsML = await getShopSettingsML(shopML);
   const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
     getProviderCredentialsML(settingsML, "google", `https://${hostML}/google/callback`);
 
@@ -62,106 +63,128 @@ export async function loader({ request: requestML }) {
 
   const googleUserML = await userResponseML.json();
 
-  const shopSessionML = await prisma.session.findFirst({
-    where: { isOnline: false },
-  });
-
-  if (!shopSessionML) {
-    throw new Error("No Shopify session found");
-  }
-
-  const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
-
   let shopifyCustomerIdML = null;
+  let userML;
 
-  const existingCustomerResponseML = await adminML.graphql(
-    `#graphql
-    query {
-      customers(first:1, query:"email:${googleUserML.email}") {
-        edges {
-          node {
-            id
-            email
-          }
-        }
-      }
-    }`
-  );
+  try {
+    const shopSessionML = await prisma.session.findFirst({
+      where: shopML ? { shop: shopML, isOnline: false } : { isOnline: false },
+    });
 
-  const existingDataML = await existingCustomerResponseML.json();
+    if (!shopSessionML) {
+      return new Response(
+        `No Shopify session found for shop "${shopML || "(SHOP_DOMAIN not set)"}". ` +
+          `The app may not be installed on this store yet, or its offline session was lost — reinstall the app on this store.`,
+        { status: 500 }
+      );
+    }
 
-  const existingCustomerML =
-    existingDataML.data?.customers?.edges[0]?.node;
+    const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
 
-  if (existingCustomerML) {
-    shopifyCustomerIdML = existingCustomerML.id;
-
-  } else {
-    const customerResponseML = await adminML.graphql(
+    const existingCustomerResponseML = await adminML.graphql(
       `#graphql
-      mutation customerCreate($input: CustomerInput!) {
-        customerCreate(input:$input){
-          customer{
-            id
-            email
-          }
-          userErrors{
-            field
-            message
+      query {
+        customers(first:1, query:"email:${googleUserML.email}") {
+          edges {
+            node {
+              id
+              email
+            }
           }
         }
-      }`,
-      {
-        variables: {
-          input: {
-            email: googleUserML.email,
-            firstName: googleUserML.given_name,
-            lastName: googleUserML.family_name,
-          },
-        },
-      }
+      }`
     );
 
-    const resultML = await customerResponseML.json();
+    const existingDataML = await existingCustomerResponseML.json();
 
-    const customerCreateResultML =
-      resultML.data?.customerCreate;
+    const existingCustomerML =
+      existingDataML.data?.customers?.edges[0]?.node;
 
-    if (!customerCreateResultML) {
-      return new Response(
-        "Customer creation failed",
-        { status: 400 }
+    if (existingCustomerML) {
+      shopifyCustomerIdML = existingCustomerML.id;
+
+    } else {
+      const customerResponseML = await adminML.graphql(
+        `#graphql
+        mutation customerCreate($input: CustomerInput!) {
+          customerCreate(input:$input){
+            customer{
+              id
+              email
+            }
+            userErrors{
+              field
+              message
+            }
+          }
+        }`,
+        {
+          variables: {
+            input: {
+              email: googleUserML.email,
+              firstName: googleUserML.given_name,
+              lastName: googleUserML.family_name,
+            },
+          },
+        }
       );
+
+      const resultML = await customerResponseML.json();
+
+      const customerCreateResultML =
+        resultML.data?.customerCreate;
+
+      if (!customerCreateResultML) {
+        console.error("[google.callback] customerCreate returned no data:", JSON.stringify(resultML));
+        return new Response(
+          "Customer creation failed — the Admin API returned no data (often a missing scope, e.g. write_customers). Check the server log for the raw response.",
+          { status: 500 }
+        );
+      }
+
+      if (customerCreateResultML.userErrors.length > 0) {
+        console.error("[google.callback] customerCreate userErrors:", customerCreateResultML.userErrors);
+        return new Response(
+          `Customer creation failed: ${customerCreateResultML.userErrors.map((e) => e.message).join(", ")}`,
+          { status: 400 }
+        );
+      }
+
+      shopifyCustomerIdML = customerCreateResultML.customer?.id;
     }
 
-    if (customerCreateResultML.userErrors.length > 0) {
+    userML = await prisma.googleUser.upsert({
+      where: {
+        email: googleUserML.email,
+      },
+      update: {
+        name: googleUserML.name,
+        profileImage: googleUserML.picture,
+        shopifyCustomerId: shopifyCustomerIdML,
+      },
+      create: {
+        googleId: googleUserML.id,
+        name: googleUserML.name,
+        email: googleUserML.email,
+        profileImage: googleUserML.picture,
+        shopifyCustomerId: shopifyCustomerIdML,
+      },
+    });
+  } catch (errML) {
+    if (errML instanceof Response) {
+      const bodyTextML = await errML.text().catch(() => "");
+      console.error(
+        `[google.callback] Shopify Admin API/session threw a Response — status ${errML.status}:`,
+        bodyTextML || "(empty body)"
+      );
       return new Response(
-        "Customer creation failed",
-        { status: 400 }
+        `Google login failed talking to the Shopify Admin API (status ${errML.status}). This usually means the offline session for this shop is invalid, expired, or missing a required scope — try uninstalling and reinstalling the app on this store, then check the Session row's "scope" column in Prisma Studio.`,
+        { status: 500 }
       );
     }
-
-    shopifyCustomerIdML =
-      customerCreateResultML.customer?.id;
+    console.error("[google.callback] Unexpected error:", errML);
+    return new Response(`Google login failed: ${errML.message}`, { status: 500 });
   }
-
-  const userML = await prisma.googleUser.upsert({
-    where: {
-      email: googleUserML.email,
-    },
-    update: {
-      name: googleUserML.name,
-      profileImage: googleUserML.picture,
-      shopifyCustomerId: shopifyCustomerIdML,
-    },
-    create: {
-      googleId: googleUserML.id,
-      name: googleUserML.name,
-      email: googleUserML.email,
-      profileImage: googleUserML.picture,
-      shopifyCustomerId: shopifyCustomerIdML,
-    },
-  });
 
   const authCodeML = crypto.randomUUID();
 

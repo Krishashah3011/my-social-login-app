@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useFetcher, useLoaderData } from "react-router";
-import db from "../db.server";
+import { getShopSettingsML } from "../utils/providerCredentials.server";
 
 export const loader = async () => {
-  const shopML = process.env.SHOP_DOMAIN;
-
-  const settingsML = shopML
-    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
-    : null;
+  const settingsML = await getShopSettingsML();
 
   return {
     logos: {

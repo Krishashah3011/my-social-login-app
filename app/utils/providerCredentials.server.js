@@ -1,7 +1,5 @@
 import db from "../db.server";
 
-// Maps our internal provider key -> the legacy env var names used before
-// merchants could enter their own Client ID / Secret in Client Settings.
 const ENV_FALLBACKS_ML = {
   google: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
   facebook: { clientId: "FACEBOOK_CLIENT_ID", clientSecret: "FACEBOOK_CLIENT_SECRET" },
@@ -10,22 +8,46 @@ const ENV_FALLBACKS_ML = {
   linkedin: { clientId: "linked_CLIENT_ID", clientSecret: "linked_CLIENT_SECRET" },
 };
 
-// Looks up the current shop's settings row (same pattern already used
-// across the auth.*.jsx loaders — keyed off SHOP_DOMAIN).
-export async function getShopSettingsML() {
-  const shopML = process.env.SHOP_DOMAIN;
-  return shopML ? await db.shopSettings.findUnique({ where: { shop: shopML } }) : null;
+export async function getShopSettingsML(shopML) {
+  const resolvedShopML = shopML || process.env.SHOP_DOMAIN;
+
+  if (!resolvedShopML) {
+    console.error(
+      "[providerCredentials] No shop resolved — pass a shop explicitly or set SHOP_DOMAIN in .env."
+    );
+    return null;
+  }
+
+  const settingsML = await db.shopSettings.findUnique({ where: { shop: resolvedShopML } });
+
+  if (!settingsML) {
+    console.error(
+      `[providerCredentials] No ShopSettings row found for shop "${resolvedShopML}". ` +
+        `Make sure this exactly matches the shop domain saved when you filled in Client Settings ` +
+        `in the embedded admin app (case-sensitive, e.g. "your-store.myshopify.com").`
+    );
+  }
+
+  return settingsML;
 }
 
-// Resolves { clientId, clientSecret, callbackUrl } for a provider.
-// Order of precedence: merchant-entered value in Client Settings (DB) ->
-// legacy env var (clientId/clientSecret only) -> defaultCallbackUrlML.
 export function getProviderCredentialsML(settingsML, providerKeyML, defaultCallbackUrlML) {
   const envKeysML = ENV_FALLBACKS_ML[providerKeyML];
 
+  const clientIdML = settingsML?.[`${providerKeyML}ClientId`] || process.env[envKeysML.clientId];
+  const clientSecretML =
+    settingsML?.[`${providerKeyML}ClientSecret`] || process.env[envKeysML.clientSecret];
+
+  if (!clientIdML) {
+    console.error(
+      `[providerCredentials] No Client ID for "${providerKeyML}" — checked ` +
+        `ShopSettings.${providerKeyML}ClientId and env.${envKeysML.clientId}, both empty.`
+    );
+  }
+
   return {
-    clientId: settingsML?.[`${providerKeyML}ClientId`] || process.env[envKeysML.clientId],
-    clientSecret: settingsML?.[`${providerKeyML}ClientSecret`] || process.env[envKeysML.clientSecret],
+    clientId: clientIdML,
+    clientSecret: clientSecretML,
     callbackUrl: settingsML?.[`${providerKeyML}CallbackUrl`] || defaultCallbackUrlML,
   };
 }

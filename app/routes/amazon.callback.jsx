@@ -11,8 +11,9 @@ export async function loader({ request: requestML }) {
   const stateDataML = urlML.searchParams.get("state");
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const shopML = process.env.SHOP_DOMAIN;
 
-  const settingsML = await getShopSettingsML();
+  const settingsML = await getShopSettingsML(shopML);
   const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
     getProviderCredentialsML(settingsML, "amazon", `https://${hostML}/amazon/callback`);
 
@@ -55,77 +56,109 @@ export async function loader({ request: requestML }) {
     return new Response("Amazon profile missing email", { status: 400 });
   }
 
-  const shopSessionML = await prisma.session.findFirst({
-    where: { isOnline: false },
-  });
-
-  if (!shopSessionML) {
-    throw new Error("No Shopify session found");
-  }
-
-  const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
-
   let shopifyCustomerIdML = null;
+  let userML;
 
-  const existingCustomerResponseML = await adminML.graphql(
-    `#graphql
-    query {
-      customers(first:1, query:"email:${amazonUserML.email}") {
-        edges { node { id email } }
-      }
-    }`,
-  );
+  try {
+    const shopSessionML = await prisma.session.findFirst({
+      where: shopML ? { shop: shopML, isOnline: false } : { isOnline: false },
+    });
 
-  const existingDataML = await existingCustomerResponseML.json();
-  const existingCustomerML = existingDataML.data?.customers?.edges[0]?.node;
-
-  if (existingCustomerML) {
-    shopifyCustomerIdML = existingCustomerML.id;
-  } else {
-    const namePartsML = (amazonUserML.name || "").split(" ");
-    const customerResponseML = await adminML.graphql(
-      `#graphql
-      mutation customerCreate($input: CustomerInput!) {
-        customerCreate(input:$input){
-          customer { id email }
-          userErrors { field message }
-        }
-      }`,
-      {
-        variables: {
-          input: {
-            email: amazonUserML.email,
-            firstName: namePartsML[0] || "",
-            lastName: namePartsML.slice(1).join(" ") || "",
-          },
-        },
-      },
-    );
-
-    const resultML = await customerResponseML.json();
-
-    const customerCreateResultML = resultML.data?.customerCreate;
-
-    if (!customerCreateResultML || customerCreateResultML.userErrors.length > 0) {
-      return new Response("Customer creation failed", { status: 400 });
+    if (!shopSessionML) {
+      return new Response(
+        `No Shopify session found for shop "${shopML || "(SHOP_DOMAIN not set)"}". ` +
+          `The app may not be installed on this store yet, or its offline session was lost — reinstall the app on this store.`,
+        { status: 500 }
+      );
     }
 
-    shopifyCustomerIdML = customerCreateResultML.customer?.id;
-  }
+    const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
 
-  const userML = await prisma.amazonUser.upsert({
-    where: { email: amazonUserML.email },
-    update: {
-      name: amazonUserML.name,
-      shopifyCustomerId: shopifyCustomerIdML,
-    },
-    create: {
-      amazonId: amazonUserML.user_id,
-      name: amazonUserML.name,
-      email: amazonUserML.email,
-      shopifyCustomerId: shopifyCustomerIdML,
-    },
-  });
+    const existingCustomerResponseML = await adminML.graphql(
+      `#graphql
+      query {
+        customers(first:1, query:"email:${amazonUserML.email}") {
+          edges { node { id email } }
+        }
+      }`,
+    );
+
+    const existingDataML = await existingCustomerResponseML.json();
+    const existingCustomerML = existingDataML.data?.customers?.edges[0]?.node;
+
+    if (existingCustomerML) {
+      shopifyCustomerIdML = existingCustomerML.id;
+    } else {
+      const namePartsML = (amazonUserML.name || "").split(" ");
+      const customerResponseML = await adminML.graphql(
+        `#graphql
+        mutation customerCreate($input: CustomerInput!) {
+          customerCreate(input:$input){
+            customer { id email }
+            userErrors { field message }
+          }
+        }`,
+        {
+          variables: {
+            input: {
+              email: amazonUserML.email,
+              firstName: namePartsML[0] || "",
+              lastName: namePartsML.slice(1).join(" ") || "",
+            },
+          },
+        },
+      );
+
+      const resultML = await customerResponseML.json();
+      const customerCreateResultML = resultML.data?.customerCreate;
+
+      if (!customerCreateResultML) {
+        console.error("[amazon.callback] customerCreate returned no data:", JSON.stringify(resultML));
+        return new Response(
+          "Customer creation failed — the Admin API returned no data (often a missing scope, e.g. write_customers). Check the server log for the raw response.",
+          { status: 500 }
+        );
+      }
+
+      if (customerCreateResultML.userErrors.length > 0) {
+        console.error("[amazon.callback] customerCreate userErrors:", customerCreateResultML.userErrors);
+        return new Response(
+          `Customer creation failed: ${customerCreateResultML.userErrors.map((e) => e.message).join(", ")}`,
+          { status: 400 }
+        );
+      }
+
+      shopifyCustomerIdML = customerCreateResultML.customer?.id;
+    }
+
+    userML = await prisma.amazonUser.upsert({
+      where: { email: amazonUserML.email },
+      update: {
+        name: amazonUserML.name,
+        shopifyCustomerId: shopifyCustomerIdML,
+      },
+      create: {
+        amazonId: amazonUserML.user_id,
+        name: amazonUserML.name,
+        email: amazonUserML.email,
+        shopifyCustomerId: shopifyCustomerIdML,
+      },
+    });
+  } catch (errML) {
+    if (errML instanceof Response) {
+      const bodyTextML = await errML.text().catch(() => "");
+      console.error(
+        `[amazon.callback] Shopify Admin API/session threw a Response — status ${errML.status}:`,
+        bodyTextML || "(empty body)"
+      );
+      return new Response(
+        `Amazon login failed talking to the Shopify Admin API (status ${errML.status}). This usually means the offline session for this shop is invalid, expired, or missing a required scope — try uninstalling and reinstalling the app on this store, then check the Session row's "scope" column in Prisma Studio.`,
+        { status: 500 }
+      );
+    }
+    console.error("[amazon.callback] Unexpected error:", errML);
+    return new Response(`Amazon login failed: ${errML.message}`, { status: 500 });
+  }
 
   const authCodeML = crypto.randomUUID();
 

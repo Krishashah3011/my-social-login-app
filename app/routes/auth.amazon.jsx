@@ -1,5 +1,4 @@
-import db from "../db.server";
-import { getProviderCredentialsML } from "../utils/providerCredentials.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -8,10 +7,7 @@ export async function loader({ request: requestML }) {
   const redirect_uriML = urlML.searchParams.get("redirect_uri");
   const nonceML = urlML.searchParams.get("nonce");
 
-  const shopML = process.env.SHOP_DOMAIN;
-  const settingsML = shopML
-    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
-    : null;
+  const settingsML = await getShopSettingsML();
 
   if (settingsML && (!settingsML.appEnabled || !settingsML.amazonEnabled)) {
     const backToSelectorML =
@@ -29,6 +25,13 @@ export async function loader({ request: requestML }) {
     "amazon",
     `https://${hostML}/amazon/callback`
   );
+
+  if (!clientIdML) {
+    return new Response(
+      "Amazon login isn't configured for this shop yet. Add a Client ID in the app's Client Settings page (or set AMAZON_CLIENT_ID in .env).",
+      { status: 500 }
+    );
+  }
 
   const amazonURLML =
     `https://www.amazon.com/ap/oa?` +

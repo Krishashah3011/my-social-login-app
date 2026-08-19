@@ -5,90 +5,72 @@ import crypto from "crypto";
 import { saveCode } from "../utils/authCodes.server";
 import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
-
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
 
   const codeML = urlML.searchParams.get("code");
   const stateDataML = urlML.searchParams.get("state");
 
-  const hostML =
-    requestML.headers.get("x-forwarded-host") || urlML.host;
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
+  const shopML = process.env.SHOP_DOMAIN;
 
-  const settingsML = await getShopSettingsML();
+  const settingsML = await getShopSettingsML(shopML);
   const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
     getProviderCredentialsML(settingsML, "linkedin", `https://${hostML}/linked/callback`);
 
   if (!codeML) {
-    return new Response("No authorization code received", {
-      status: 400,
-    });
+    return new Response("No authorization code received", { status: 400 });
   }
 
   if (!stateDataML) {
-    return new Response("Missing state", {
-      status: 400,
-    });
+    return new Response("Missing state", { status: 400 });
   }
 
-  const [stateML, redirect_uriML, nonceML] =
-    stateDataML.split("|");
+  const [stateML, redirect_uriML, nonceML] = stateDataML.split("|");
 
-  const tokenResponseML = await fetch(
-    "https://www.linkedin.com/oauth/v2/accessToken",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        client_id: clientIdML,
-        client_secret: clientSecretML,
-        code: codeML,
-        grant_type: "authorization_code",
-        redirect_uri: callbackUrlML,
-      }),
-    }
-  );
+  const tokenResponseML = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientIdML,
+      client_secret: clientSecretML,
+      code: codeML,
+      grant_type: "authorization_code",
+      redirect_uri: callbackUrlML,
+    }),
+  });
 
   const tokensML = await tokenResponseML.json();
 
   if (!tokensML.access_token) {
-    return new Response(
-      "linked token exchange failed",
-      {
-        status: 400,
-      }
-    );
+    return new Response("linked token exchange failed", { status: 400 });
   }
 
-  const userResponseML = await fetch(
-    "https://api.linkedin.com/v2/userinfo",
-    {
-      headers: {
-        Authorization: `Bearer ${tokensML.access_token}`,
-      },
-    }
-  );
-
-  const linkedUserML = await userResponseML.json();
-  const shopSessionML = await prisma.session.findFirst({
-    where: { isOnline: false },
+  const userResponseML = await fetch("https://api.linkedin.com/v2/userinfo", {
+    headers: { Authorization: `Bearer ${tokensML.access_token}` },
   });
 
-  if (!shopSessionML) {
-    throw new Error("No Shopify session found");
-  }
-
-  const { admin: adminML } =
-    await unauthenticated.admin(
-      shopSessionML.shop
-    );
+  const linkedUserML = await userResponseML.json();
 
   let shopifyCustomerIdML = null;
+  let userML;
 
-  const existingCustomerResponseML =
-    await adminML.graphql(
+  try {
+    const shopSessionML = await prisma.session.findFirst({
+      where: shopML ? { shop: shopML, isOnline: false } : { isOnline: false },
+    });
+
+    if (!shopSessionML) {
+      return new Response(
+        `No Shopify session found for shop "${shopML || "(SHOP_DOMAIN not set)"}". ` +
+          `The app may not be installed on this store yet, or its offline session was lost — reinstall the app on this store.`,
+        { status: 500 }
+      );
+    }
+
+    const { admin: adminML } = await unauthenticated.admin(shopSessionML.shop);
+
+    const existingCustomerResponseML = await adminML.graphql(
       `#graphql
       query {
         customers(first:1, query:"email:${linkedUserML.email}") {
@@ -102,21 +84,13 @@ export async function loader({ request: requestML }) {
       }`
     );
 
-  const existingDataML =
-    await existingCustomerResponseML.json();
+    const existingDataML = await existingCustomerResponseML.json();
+    const existingCustomerML = existingDataML.data?.customers?.edges[0]?.node;
 
-  const existingCustomerML =
-    existingDataML.data?.customers?.edges[0]?.node;
-
-  if (existingCustomerML) {
-
-    shopifyCustomerIdML =
-      existingCustomerML.id;
-
-  } else {
-
-    const customerResponseML =
-      await adminML.graphql(
+    if (existingCustomerML) {
+      shopifyCustomerIdML = existingCustomerML.id;
+    } else {
+      const customerResponseML = await adminML.graphql(
         `#graphql
         mutation customerCreate($input: CustomerInput!) {
           customerCreate(input:$input){
@@ -134,72 +108,67 @@ export async function loader({ request: requestML }) {
           variables: {
             input: {
               email: linkedUserML.email,
-              firstName:
-                linkedUserML.given_name || "",
-              lastName:
-                linkedUserML.family_name || "",
+              firstName: linkedUserML.given_name || "",
+              lastName: linkedUserML.family_name || "",
             },
           },
         }
       );
 
-    const resultML =
-      await customerResponseML.json();
+      const resultML = await customerResponseML.json();
+      const customerCreateResultML = resultML.data?.customerCreate;
 
-    const customerCreateResultML =
-      resultML.data?.customerCreate;
+      if (!customerCreateResultML) {
+        console.error("[linked.callback] customerCreate returned no data:", JSON.stringify(resultML));
+        return new Response(
+          "Customer creation failed — the Admin API returned no data (often a missing scope, e.g. write_customers). Check the server log for the raw response.",
+          { status: 500 }
+        );
+      }
 
-    if (!customerCreateResultML) {
-      return new Response(
-        "Customer creation failed",
-        {
-          status: 400,
-        }
-      );
+      if (customerCreateResultML.userErrors.length > 0) {
+        console.error("[linked.callback] customerCreate userErrors:", customerCreateResultML.userErrors);
+        return new Response(
+          `Customer creation failed: ${customerCreateResultML.userErrors.map((e) => e.message).join(", ")}`,
+          { status: 400 }
+        );
+      }
+
+      shopifyCustomerIdML = customerCreateResultML.customer.id;
     }
 
-    if (
-      customerCreateResultML.userErrors.length > 0
-    ) {
-      return new Response(
-        "Customer creation failed",
-        {
-          status: 400,
-        }
-      );
-    }
-
-    shopifyCustomerIdML =
-      customerCreateResultML.customer.id;
-  }
-
-  const userML =
-    await prisma.linkedUser.upsert({
-      where: {
-        email: linkedUserML.email,
-      },
+    userML = await prisma.linkedUser.upsert({
+      where: { email: linkedUserML.email },
       update: {
-        name:
-          linkedUserML.name,
-        profileImage:
-          linkedUserML.picture,
+        name: linkedUserML.name,
+        profileImage: linkedUserML.picture,
         shopifyCustomerId: shopifyCustomerIdML,
       },
       create: {
-        linkedId:
-          linkedUserML.sub,
-        name:
-          linkedUserML.name,
-        email:
-          linkedUserML.email,
-        profileImage:
-          linkedUserML.picture,
+        linkedId: linkedUserML.sub,
+        name: linkedUserML.name,
+        email: linkedUserML.email,
+        profileImage: linkedUserML.picture,
         shopifyCustomerId: shopifyCustomerIdML,
       },
     });
+  } catch (errML) {
+    if (errML instanceof Response) {
+      const bodyTextML = await errML.text().catch(() => "");
+      console.error(
+        `[linked.callback] Shopify Admin API/session threw a Response — status ${errML.status}:`,
+        bodyTextML || "(empty body)"
+      );
+      return new Response(
+        `LinkedIn login failed talking to the Shopify Admin API (status ${errML.status}). This usually means the offline session for this shop is invalid, expired, or missing a required scope — try uninstalling and reinstalling the app on this store, then check the Session row's "scope" column in Prisma Studio.`,
+        { status: 500 }
+      );
+    }
+    console.error("[linked.callback] Unexpected error:", errML);
+    return new Response(`LinkedIn login failed: ${errML.message}`, { status: 500 });
+  }
 
-  const authCodeML =
-    crypto.randomUUID();
+  const authCodeML = crypto.randomUUID();
 
   await saveCode(authCodeML, {
     email: userML.email,
@@ -209,17 +178,10 @@ export async function loader({ request: requestML }) {
   });
 
   if (!redirect_uriML) {
-    return new Response(
-      "Missing redirect_uri",
-      {
-        status: 400,
-      }
-    );
+    return new Response("Missing redirect_uri", { status: 400 });
   }
 
-  return redirect(
-    `${redirect_uriML}?code=${authCodeML}&state=${stateML}`
-  );
+  return redirect(`${redirect_uriML}?code=${authCodeML}&state=${stateML}`);
 }
 
 export default function linkedCallback() {

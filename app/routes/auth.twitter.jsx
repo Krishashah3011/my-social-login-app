@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import { saveVerifier } from "../lib/twitterPkce.server";
-import db from "../db.server";
-import { getProviderCredentialsML } from "../utils/providerCredentials.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -10,10 +9,7 @@ export async function loader({ request: requestML }) {
   const redirect_uriML = urlML.searchParams.get("redirect_uri");
   const nonceML = urlML.searchParams.get("nonce");
 
-  const shopML = process.env.SHOP_DOMAIN;
-  const settingsML = shopML
-    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
-    : null;
+  const settingsML = await getShopSettingsML();
 
   if (settingsML && (!settingsML.appEnabled || !settingsML.twitterEnabled)) {
     const backToSelectorML =
@@ -32,11 +28,15 @@ export async function loader({ request: requestML }) {
     `https://${hostML}/twitter/callback`
   );
 
+  if (!clientIdML) {
+    return new Response(
+      "X (Twitter) login isn't configured for this shop yet. Add a Client ID in the app's Client Settings page (or set X_CLIENT_ID in .env).",
+      { status: 500 }
+    );
+  }
+
   const codeVerifierML = crypto.randomBytes(32).toString("hex");
-  const codeChallengeML = crypto
-    .createHash("sha256")
-    .update(codeVerifierML)
-    .digest("base64url");
+  const codeChallengeML = crypto.createHash("sha256").update(codeVerifierML).digest("base64url");
 
   const twitterStateML = `${stateML}|${redirect_uriML}|${nonceML}`;
   saveVerifier(stateML, codeVerifierML);

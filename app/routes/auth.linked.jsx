@@ -1,6 +1,5 @@
 import { redirect } from "react-router";
-import db from "../db.server";
-import { getProviderCredentialsML } from "../utils/providerCredentials.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -9,10 +8,7 @@ export async function loader({ request: requestML }) {
   const redirect_uriML = urlML.searchParams.get("redirect_uri");
   const nonceML = urlML.searchParams.get("nonce");
 
-  const shopML = process.env.SHOP_DOMAIN;
-  const settingsML = shopML
-    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
-    : null;
+  const settingsML = await getShopSettingsML();
 
   if (settingsML && (!settingsML.appEnabled || !settingsML.linkedinEnabled)) {
     const backToSelectorML =
@@ -23,14 +19,20 @@ export async function loader({ request: requestML }) {
     return redirect(backToSelectorML);
   }
 
-  const hostML =
-    requestML.headers.get("x-forwarded-host") || urlML.host;
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
 
   const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
     settingsML,
     "linkedin",
     `https://${hostML}/linked/callback`
   );
+
+  if (!clientIdML) {
+    return new Response(
+      "LinkedIn login isn't configured for this shop yet. Add a Client ID in the app's Client Settings page (or set linked_CLIENT_ID in .env).",
+      { status: 500 }
+    );
+  }
 
   const linkedURLML =
     "https://www.linkedin.com/oauth/v2/authorization?" +
@@ -39,9 +41,7 @@ export async function loader({ request: requestML }) {
     `&response_type=code` +
     `&scope=openid%20profile%20email` +
     `&prompt=login` +
-    `&state=${encodeURIComponent(
-      `${stateML}|${redirect_uriML}|${nonceML}`
-    )}`;
+    `&state=${encodeURIComponent(`${stateML}|${redirect_uriML}|${nonceML}`)}`;
 
   return redirect(linkedURLML);
 }

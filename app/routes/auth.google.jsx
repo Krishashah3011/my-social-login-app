@@ -1,5 +1,4 @@
-import db from "../db.server";
-import { getProviderCredentialsML } from "../utils/providerCredentials.server";
+import { getShopSettingsML, getProviderCredentialsML } from "../utils/providerCredentials.server";
 
 export async function loader({ request: requestML }) {
   const urlML = new URL(requestML.url);
@@ -8,10 +7,7 @@ export async function loader({ request: requestML }) {
   const redirect_uriML = urlML.searchParams.get("redirect_uri");
   const nonceML = urlML.searchParams.get("nonce");
 
-  const shopML = process.env.SHOP_DOMAIN;
-  const settingsML = shopML
-    ? await db.shopSettings.findUnique({ where: { shop: shopML } })
-    : null;
+  const settingsML = await getShopSettingsML();
 
   if (settingsML && (!settingsML.appEnabled || !settingsML.googleEnabled)) {
     const backToSelectorML =
@@ -22,8 +18,7 @@ export async function loader({ request: requestML }) {
     return Response.redirect(new URL(backToSelectorML, urlML.origin));
   }
 
-  const hostML =
-    requestML.headers.get("x-forwarded-host") || urlML.host;
+  const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
 
   const { clientId: clientIdML, callbackUrl: callbackUrlML } = getProviderCredentialsML(
     settingsML,
@@ -31,15 +26,20 @@ export async function loader({ request: requestML }) {
     `https://${hostML}/google/callback`
   );
 
+  if (!clientIdML) {
+    return new Response(
+      "Google login isn't configured for this shop yet. Add a Google Client ID in the app's Client Settings page (or set GOOGLE_CLIENT_ID in .env).",
+      { status: 500 }
+    );
+  }
+
   const googleURLML =
     `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${clientIdML}` +
     `&redirect_uri=${encodeURIComponent(callbackUrlML)}` +
     `&response_type=code` +
     `&scope=email profile openid` +
-    `&state=${encodeURIComponent(
-      `${stateML}|${redirect_uriML}|${nonceML}`
-    )}`;
+    `&state=${encodeURIComponent(`${stateML}|${redirect_uriML}|${nonceML}`)}`;
 
   return Response.redirect(googleURLML);
 }
