@@ -678,9 +678,10 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
 
       <div style={stylesML.clientCardBody}>
         <div style={stylesML.subLabel}>
-          This is the pair Shopify uses to authenticate itself to this app — not tied to any
-          social provider. Enter a value here (any string you choose), then paste the exact
-          same Client ID and Client Secret into your store's{" "}
+          This is the pair that Shopify uses to authenticate itself to this app — not tied to any
+          social provider. Enter a value here (any string you choose), then click connect to provider
+          and paste the exact same Client ID, Client Secret and Well-known or discovery endpoint URL
+          into your store's{" "}
           {identityProvidersDeepLinkML ? (
             <a href={identityProvidersDeepLinkML} target="_blank" rel="noreferrer">
               Manage Providers
@@ -823,7 +824,7 @@ function ClientSettingsCard({
             style={stylesML.clientInput}
             value={valuesML.callbackUrl}
             onChange={(eML) => onFieldChangeML(providerKey, "callbackUrl", eML.target.value)}
-            placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Callback URL`}
+            placeholder={`https://your-url/${providerKey === "linkedin" ? "linked" : providerKey}/callback`}
           />
         </div>
       </div>

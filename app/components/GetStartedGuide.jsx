@@ -259,22 +259,16 @@ export default function GetStartedGuide({
             </p>
 
             <p style={stylesML.stepDescription}>
-              For each provider you enable, go to Shopify's Customer
-              Accounts settings and create a login provider there too —
-              paste in the same Client ID and Client Secret you entered on
-              this app's Settings page. Social login buttons won't appear
-              at checkout until a provider is created here.
+              For each provider you enable, create an app on that  provider’s developer
+              platform to get your Client ID and Client Secret. Then, add those credentials to
+              the corresponding provider in this app’s client Settings page to connect it.
+              Social login buttons won't work at checkout until a provider is connected here.
             </p>
 
-            <a
-              href={identityProvidersDeepLinkML}
-              target="_blank"
-              rel="noreferrer"
-              style={stylesML.stepButton}
-            >
+            <Link to="/app/settings" style={stylesML.stepButton}>
               Manage Providers
               <ArrowRightIconML />
-            </a>
+            </Link>
           </div>
 
           <hr style={stylesML.stepDivider} />
