@@ -671,18 +671,37 @@ function ClientSettingsCard({
 }) {
   const DefaultIconML = DEFAULT_ICONS_ML[providerKey];
   const [showSecretML, setShowSecretML] = useState(false);
+  const dragAllowedRef = useRef(false);
 
   return (
     <div
       style={{ ...stylesML.clientCard, opacity: isDraggingML ? 0.5 : 1 }}
       draggable
-      onDragStart={onDragStartML}
+      onDragStart={(eML) => {
+        if (!dragAllowedRef.current) {
+          eML.preventDefault();
+          return;
+        }
+        onDragStartML(eML);
+      }}
       onDragOver={onDragOverML}
       onDrop={onDropML}
-      onDragEnd={onDragEndML}
+      onDragEnd={(eML) => {
+        dragAllowedRef.current = false;
+        onDragEndML(eML);
+      }}
     >
       <div style={stylesML.clientCardHeader}>
-        <span style={stylesML.dragHandle} title="Drag to reorder">
+        <span
+          style={stylesML.dragHandle}
+          title="Drag to reorder"
+          onMouseDown={() => {
+            dragAllowedRef.current = true;
+          }}
+          onMouseUp={() => {
+            dragAllowedRef.current = false;
+          }}
+        >
           <GripIcon />
         </span>
         <div style={stylesML.logoPreview}>
