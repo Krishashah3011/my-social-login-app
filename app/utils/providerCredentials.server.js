@@ -57,3 +57,26 @@ export function getProviderCredentialsML(settingsML, providerKeyML, defaultCallb
     callbackUrl: settingsML?.[`${providerKeyML}CallbackUrl`] || defaultCallbackUrlML,
   };
 }
+
+export function getSmtpCredentialsML(settingsML) {
+  const hostML = settingsML?.smtpHost || process.env.SMTP_HOST;
+  const portML = settingsML?.smtpPort || process.env.SMTP_PORT;
+  const userML = settingsML?.smtpUser || process.env.SMTP_USER;
+  const passML = settingsML?.smtpPass || process.env.SMTP_PASS;
+  const fromEmailML = settingsML?.smtpFromEmail || process.env.SMTP_FROM_EMAIL;
+
+  if (!hostML || !userML || !passML) {
+    console.error(
+      "[providerCredentials] Incomplete SMTP settings — checked ShopSettings.smtpHost/" +
+        "smtpUser/smtpPass and env.SMTP_HOST/SMTP_USER/SMTP_PASS, still missing a value."
+    );
+  }
+
+  return {
+    host: hostML,
+    port: Number(portML),
+    user: userML,
+    pass: passML,
+    fromEmail: fromEmailML,
+  };
+}

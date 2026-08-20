@@ -1,19 +1,9 @@
 import prisma from "../db.server";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import { getShopSettingsML, getSmtpCredentialsML } from "../utils/providerCredentials.server";
 
 const RESEND_COOLDOWN_SECONDS_ML = 30;
-
-const transporterML = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
 function isValidEmailML(emailML) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailML);
@@ -61,8 +51,22 @@ export async function action({ request: requestML }) {
   });
 
   try {
+    const settingsML = await getShopSettingsML();
+    const smtpML = getSmtpCredentialsML(settingsML);
+
+    const transporterML = nodemailer.createTransport({
+      host: smtpML.host,
+      port: smtpML.port,
+      secure: false,
+      requireTLS: true,
+      auth: {
+        user: smtpML.user,
+        pass: smtpML.pass,
+      },
+    });
+
     await transporterML.sendMail({
-      from: `"Login" <${process.env.SMTP_FROM_EMAIL}>`,
+      from: `"Login" <${smtpML.fromEmail}>`,
       to: emailML,
       subject: "Your login code",
       html: `

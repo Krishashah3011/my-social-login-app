@@ -287,6 +287,23 @@ export default function GetStartedGuide({
               <ArrowRightIconML />
             </Link>
           </div>
+
+          <hr style={stylesML.stepDivider} />
+
+          <div>
+            <p style={stylesML.stepTitle}>5. Set Up Email (SMTP) Login</p>
+
+            <p style={stylesML.stepDescription}>
+              To let customers sign in with an email verification code, add your SMTP
+              provider's Host, Port, Username, Password and From Email under the SMTP Settings
+              tab in Settings.
+            </p>
+
+            <Link to="/app/settings" style={stylesML.stepButton}>
+              Go to SMTP Settings
+              <ArrowRightIconML />
+            </Link>
+          </div>
         </div>
       )}
     </div>

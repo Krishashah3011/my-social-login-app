@@ -77,6 +77,11 @@ export const action = async ({ request: requestML }) => {
       oidcClientId: formDataML.get("oidcClientId") || null,
       oidcClientSecret: formDataML.get("oidcClientSecret") || null,
       oidcWellKnownUrl: formDataML.get("oidcWellKnownUrl") || null,
+      smtpHost: formDataML.get("smtpHost") || null,
+      smtpPort: formDataML.get("smtpPort") || null,
+      smtpUser: formDataML.get("smtpUser") || null,
+      smtpPass: formDataML.get("smtpPass") || null,
+      smtpFromEmail: formDataML.get("smtpFromEmail") || null,
       ...clientDataML,
     },
   });
@@ -185,41 +190,41 @@ function GripIcon() {
 
 function EyeIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
-        d="M1.5 9C1.5 9 4.5 3.5 9 3.5C13.5 3.5 16.5 9 16.5 9C16.5 9 13.5 14.5 9 14.5C4.5 14.5 1.5 9 1.5 9Z"
+        d="M7.75 2.45962C8.66153 2.16968 9.6604 2 10.75 2C14.9319 2 17.778 4.49956 19.4751 6.70433C20.325 7.80853 20.75 8.3606 20.75 10C20.75 11.6394 20.325 12.1915 19.4751 13.2957C17.778 15.5004 14.9319 18 10.75 18C6.56811 18 3.72196 15.5004 2.02489 13.2957C1.17496 12.1915 0.75 11.6394 0.75 10C0.75 8.3606 1.17496 7.80853 2.02489 6.70433C2.50612 6.07914 3.07973 5.43025 3.75 4.82137"
         stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
-      <circle cx="9" cy="9" r="2.25" stroke={BLUE_ML} strokeWidth="1.5" />
+      <path
+        d="M13.75 10C13.75 11.6569 12.4069 13 10.75 13C9.0931 13 7.75 11.6569 7.75 10C7.75 8.3431 9.0931 7 10.75 7C12.4069 7 13.75 8.3431 13.75 10Z"
+        stroke={BLUE_ML}
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
 
 function EyeOffIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
-        d="M2.25 2.25L15.75 15.75"
+        d="M7.75 2.45962C8.66153 2.16968 9.6604 2 10.75 2C14.9319 2 17.778 4.49956 19.4751 6.70433C20.325 7.80853 20.75 8.3606 20.75 10C20.75 11.6394 20.325 12.1915 19.4751 13.2957C17.778 15.5004 14.9319 18 10.75 18C6.56811 18 3.72196 15.5004 2.02489 13.2957C1.17496 12.1915 0.75 11.6394 0.75 10C0.75 8.3606 1.17496 7.80853 2.02489 6.70433C2.50612 6.07914 3.07973 5.43025 3.75 4.82137"
         stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
       />
       <path
-        d="M7.7 4.05C8.12 3.9 8.55 3.83 9 3.83C13.5 3.83 16.5 9 16.5 9C16.06 9.77 15.13 11.03 13.79 12.09M4.9 5.24C3.06 6.53 1.5 9 1.5 9C1.5 9 4.5 14.17 9 14.17C10.28 14.17 11.4 13.75 12.33 13.14"
+        d="M13.75 10C13.75 11.6569 12.4069 13 10.75 13C9.0931 13 7.75 11.6569 7.75 10C7.75 8.3431 9.0931 7 10.75 7C12.4069 7 13.75 8.3431 13.75 10Z"
+        stroke={BLUE_ML}
+        strokeWidth="1.5"
+      />
+      <path
+        d="M1.75 1.5L19.75 18.5"
         stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10.6 10.6C10.24 10.96 9.75 11.17 9.19 11.14C8.24 11.09 7.47 10.32 7.42 9.37C7.39 8.86 7.57 8.39 7.88 8.04"
-        stroke={GRAY_OFF_ML}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -765,6 +770,103 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
   );
 }
 
+function SmtpSettingsCard({ valuesML, onFieldChangeML }) {
+  const [showPassML, setShowPassML] = useState(false);
+
+  return (
+    <div style={stylesML.clientCard}>
+      <div style={stylesML.clientCardBody}>
+        <div style={stylesML.clientCardHeader}>
+          <div style={stylesML.clientCardTitle}>Email (SMTP) Settings</div>
+        </div>
+
+        <div style={stylesML.subLabel}>
+          Used to send the email login verification code to your customers. Enter your SMTP
+          provider's details below — once saved here, this app no longer reads SMTP credentials
+          from environment variables.
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
+          <div style={stylesML.clientFieldLabel}>SMTP Host</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.host}
+            onChange={(eML) => onFieldChangeML("host", eML.target.value)}
+            placeholder="Enter SMTP Host"
+          />
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
+          <div style={stylesML.clientFieldLabel}>SMTP Port</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.port}
+            onChange={(eML) => onFieldChangeML("port", eML.target.value)}
+            placeholder="Enter SMTP Port"
+          />
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
+          <div style={stylesML.clientFieldLabel}>SMTP Username</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.user}
+            onChange={(eML) => onFieldChangeML("user", eML.target.value)}
+            placeholder="Enter SMTP Username"
+          />
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
+          <div style={stylesML.clientFieldLabel}>SMTP Password</div>
+          <div style={stylesML.secretInputWrap}>
+            <input
+              type={showPassML ? "text" : "password"}
+              autoComplete="off"
+              style={stylesML.secretInput}
+              value={valuesML.pass}
+              onChange={(eML) => onFieldChangeML("pass", eML.target.value)}
+              placeholder="Enter SMTP Password"
+            />
+            <button
+              type="button"
+              style={stylesML.secretToggleButton}
+              onClick={() => setShowPassML((prevML) => !prevML)}
+              aria-label={showPassML ? "Hide SMTP password" : "Show SMTP password"}
+              title={showPassML ? "Hide" : "Show"}
+            >
+              {showPassML ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
+          <div style={stylesML.clientFieldLabel}>From Email</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.fromEmail}
+            onChange={(eML) => onFieldChangeML("fromEmail", eML.target.value)}
+            placeholder="Enter From Email"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClientSettingsCard({
   providerKey,
   positionML,
@@ -1043,6 +1145,13 @@ export default function Settings() {
     clientSecret: settingsML.oidcClientSecret || "",
     wellKnownUrl: settingsML.oidcWellKnownUrl || "",
   });
+  const [smtpValuesML, setSmtpValuesML] = useState({
+    host: settingsML.smtpHost || "",
+    port: settingsML.smtpPort || "",
+    user: settingsML.smtpUser || "",
+    pass: settingsML.smtpPass || "",
+    fromEmail: settingsML.smtpFromEmail || "",
+  });
   const dragIndexRef = useRef(null);
   const [draggingIndexML, setDraggingIndexML] = useState(null);
 
@@ -1053,7 +1162,13 @@ export default function Settings() {
     oidcValuesML.clientId !== (settingsML.oidcClientId || "") ||
     oidcValuesML.clientSecret !== (settingsML.oidcClientSecret || "") ||
     oidcValuesML.wellKnownUrl !== (settingsML.oidcWellKnownUrl || "");
-  const isDirtyML = isGeneralDirtyML || isClientDirtyML;
+  const isSmtpDirtyML =
+    smtpValuesML.host !== (settingsML.smtpHost || "") ||
+    smtpValuesML.port !== (settingsML.smtpPort || "") ||
+    smtpValuesML.user !== (settingsML.smtpUser || "") ||
+    smtpValuesML.pass !== (settingsML.smtpPass || "") ||
+    smtpValuesML.fromEmail !== (settingsML.smtpFromEmail || "");
+  const isDirtyML = isGeneralDirtyML || isClientDirtyML || isSmtpDirtyML;
   const isSavingML = fetcherML.state !== "idle";
 
   useEffect(() => {
@@ -1108,6 +1223,12 @@ export default function Settings() {
     formDataML.set("oidcClientId", oidcValuesML.clientId);
     formDataML.set("oidcClientSecret", oidcValuesML.clientSecret);
     formDataML.set("oidcWellKnownUrl", oidcValuesML.wellKnownUrl);
+
+    formDataML.set("smtpHost", smtpValuesML.host);
+    formDataML.set("smtpPort", smtpValuesML.port);
+    formDataML.set("smtpUser", smtpValuesML.user);
+    formDataML.set("smtpPass", smtpValuesML.pass);
+    formDataML.set("smtpFromEmail", smtpValuesML.fromEmail);
 
     orderML.forEach((providerKeyML, indexML) => {
       const fieldsML = clientValuesML[providerKeyML];
@@ -1186,6 +1307,13 @@ export default function Settings() {
             onClick={() => setActiveTabML("client")}
           >
             Client Settings
+          </button>
+          <button
+            type="button"
+            style={tabButtonStyleML(activeTabML === "smtp")}
+            onClick={() => setActiveTabML("smtp")}
+          >
+            SMTP Settings
           </button>
         </div>
 
@@ -1294,6 +1422,22 @@ export default function Settings() {
               />
             ))}
           </div>
+        </div>
+        )}
+
+        {activeTabML === "smtp" && (
+        <div style={stylesML.innerCard}>
+          <div style={stylesML.subLabel}>
+            Configure the SMTP server used to send email login verification codes to your
+            customers.
+          </div>
+
+          <SmtpSettingsCard
+            valuesML={smtpValuesML}
+            onFieldChangeML={(fieldML, valML) =>
+              setSmtpValuesML((prevML) => ({ ...prevML, [fieldML]: valML }))
+            }
+          />
         </div>
         )}
       </div>
