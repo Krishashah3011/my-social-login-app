@@ -9,22 +9,28 @@ const ENV_FALLBACKS_ML = {
 };
 
 export async function getShopSettingsML(shopML) {
-  const resolvedShopML = shopML || process.env.SHOP_DOMAIN;
+  if (shopML) {
+    const settingsML = await db.shopSettings.findUnique({ where: { shop: shopML } });
 
-  if (!resolvedShopML) {
-    console.error(
-      "[providerCredentials] No shop resolved — pass a shop explicitly or set SHOP_DOMAIN in .env."
-    );
-    return null;
+    if (!settingsML) {
+      console.error(
+        `[providerCredentials] No ShopSettings row found for shop "${shopML}". ` +
+          `Make sure this exactly matches the shop domain saved when you filled in Client Settings ` +
+          `in the embedded admin app (case-sensitive, e.g. "your-store.myshopify.com").`
+      );
+    }
+
+    return settingsML;
   }
 
-  const settingsML = await db.shopSettings.findUnique({ where: { shop: resolvedShopML } });
+  const settingsML = await db.shopSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
 
   if (!settingsML) {
     console.error(
-      `[providerCredentials] No ShopSettings row found for shop "${resolvedShopML}". ` +
-        `Make sure this exactly matches the shop domain saved when you filled in Client Settings ` +
-        `in the embedded admin app (case-sensitive, e.g. "your-store.myshopify.com").`
+      "[providerCredentials] No ShopSettings rows exist yet. Install the app on a store and " +
+        "open its Settings or Account page once so a row gets created."
     );
   }
 

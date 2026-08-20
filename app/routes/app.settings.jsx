@@ -38,7 +38,14 @@ export const loader = async ({ request: requestML }) => {
     });
   }
 
-  return { settings: settingsML, registered: settingsML.registered };
+  const storeHandleML = sessionML.shop.replace(".myshopify.com", "");
+  const identityProvidersDeepLinkML = `https://admin.shopify.com/store/${storeHandleML}/settings/customer_accounts/authentication/identity_providers`;
+
+  return {
+    settings: settingsML,
+    registered: settingsML.registered,
+    identityProvidersDeepLink: identityProvidersDeepLinkML,
+  };
 };
 
 const CLIENT_PROVIDERS_ML = ["google", "facebook", "twitter", "amazon", "linkedin"];
@@ -67,6 +74,8 @@ export const action = async ({ request: requestML }) => {
       facebookEnabled: formDataML.get("facebookEnabled") === "true",
       linkedinEnabled: formDataML.get("linkedinEnabled") === "true",
       amazonEnabled: formDataML.get("amazonEnabled") === "true",
+      oidcClientId: formDataML.get("oidcClientId") || null,
+      oidcClientSecret: formDataML.get("oidcClientSecret") || null,
       ...clientDataML,
     },
   });
@@ -658,6 +667,67 @@ const PROVIDER_NAMES_ML = {
   linkedin: "Linkedin",
 };
 
+function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLinkML }) {
+  const [showSecretML, setShowSecretML] = useState(false);
+
+  return (
+    <div style={stylesML.clientCard}>
+      <div style={stylesML.clientCardHeader}>
+        <div style={stylesML.label}>Shopify Customer Accounts</div>
+      </div>
+
+      <div style={stylesML.clientCardBody}>
+        <div style={stylesML.subLabel}>
+          This is the pair Shopify uses to authenticate itself to this app — not tied to any
+          social provider. Enter a value here (any string you choose), then paste the exact
+          same Client ID and Client Secret into your store's{" "}
+          {identityProvidersDeepLinkML ? (
+            <a href={identityProvidersDeepLinkML} target="_blank" rel="noreferrer">
+              Manage Providers
+            </a>
+          ) : (
+            "Manage Providers"
+          )}{" "}
+          page under Settings → Customer accounts → Authentication.
+        </div>
+
+        <div>
+          <div style={stylesML.clientFieldLabel}>Client ID</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.clientId}
+            onChange={(eML) => onFieldChangeML("clientId", eML.target.value)}
+            placeholder="Enter OIDC Client ID"
+          />
+        </div>
+        <div>
+          <div style={stylesML.clientFieldLabel}>Client Secret</div>
+          <div style={stylesML.secretInputWrap}>
+            <input
+              type={showSecretML ? "text" : "password"}
+              autoComplete="off"
+              style={stylesML.secretInput}
+              value={valuesML.clientSecret}
+              onChange={(eML) => onFieldChangeML("clientSecret", eML.target.value)}
+              placeholder="Enter OIDC Client Secret"
+            />
+            <button
+              type="button"
+              style={stylesML.secretToggleButton}
+              onClick={() => setShowSecretML((prevML) => !prevML)}
+              aria-label={showSecretML ? "Hide client secret" : "Show client secret"}
+              title={showSecretML ? "Hide" : "Show"}
+            >
+              {showSecretML ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClientSettingsCard({
   providerKey,
   positionML,
@@ -906,7 +976,7 @@ function buildOrderML(settingsML) {
 }
 
 export default function Settings() {
-  const { settings: settingsML, registered: registeredML } = useLoaderData();
+  const { settings: settingsML, registered: registeredML, identityProvidersDeepLink: identityProvidersDeepLinkML } = useLoaderData();
   const fetcherML = useFetcher();
   const shopifyML = useAppBridge();
   const [showPreviewML, setShowPreviewML] = useState(false);
@@ -923,13 +993,19 @@ export default function Settings() {
 
   const [clientValuesML, setClientValuesML] = useState(() => buildClientValuesML(settingsML));
   const [orderML, setOrderML] = useState(() => buildOrderML(settingsML));
+  const [oidcValuesML, setOidcValuesML] = useState({
+    clientId: settingsML.oidcClientId || "",
+    clientSecret: settingsML.oidcClientSecret || "",
+  });
   const dragIndexRef = useRef(null);
   const [draggingIndexML, setDraggingIndexML] = useState(null);
 
   const isGeneralDirtyML = Object.keys(valuesML).some((keyML) => valuesML[keyML] !== settingsML[keyML]);
   const isClientDirtyML =
     JSON.stringify(clientValuesML) !== JSON.stringify(buildClientValuesML(settingsML)) ||
-    JSON.stringify(orderML) !== JSON.stringify(buildOrderML(settingsML));
+    JSON.stringify(orderML) !== JSON.stringify(buildOrderML(settingsML)) ||
+    oidcValuesML.clientId !== (settingsML.oidcClientId || "") ||
+    oidcValuesML.clientSecret !== (settingsML.oidcClientSecret || "");
   const isDirtyML = isGeneralDirtyML || isClientDirtyML;
   const isSavingML = fetcherML.state !== "idle";
 
@@ -981,6 +1057,9 @@ export default function Settings() {
   const handleSaveML = () => {
     const formDataML = new FormData();
     Object.entries(valuesML).forEach(([keyML, valML]) => formDataML.set(keyML, String(valML)));
+
+    formDataML.set("oidcClientId", oidcValuesML.clientId);
+    formDataML.set("oidcClientSecret", oidcValuesML.clientSecret);
 
     orderML.forEach((providerKeyML, indexML) => {
       const fieldsML = clientValuesML[providerKeyML];
@@ -1142,6 +1221,14 @@ export default function Settings() {
             Drag a card by its handle to change the order providers appear in on your storefront
             login screen.
           </div>
+
+          <OidcSettingsCard
+            valuesML={oidcValuesML}
+            onFieldChangeML={(fieldML, valML) =>
+              setOidcValuesML((prevML) => ({ ...prevML, [fieldML]: valML }))
+            }
+            identityProvidersDeepLinkML={identityProvidersDeepLinkML}
+          />
 
           <div>
             {orderML.map((providerKeyML, indexML) => (

@@ -11,9 +11,9 @@ export async function loader({ request: requestML }) {
   const stateDataML = urlML.searchParams.get("state");
 
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
-  const shopML = process.env.SHOP_DOMAIN;
 
-  const settingsML = await getShopSettingsML(shopML);
+  const settingsML = await getShopSettingsML();
+  const shopML = settingsML?.shop;
   const { clientId: clientIdML, clientSecret: clientSecretML, callbackUrl: callbackUrlML } =
     getProviderCredentialsML(settingsML, "google", `https://${hostML}/google/callback`);
 
@@ -73,7 +73,7 @@ export async function loader({ request: requestML }) {
 
     if (!shopSessionML) {
       return new Response(
-        `No Shopify session found for shop "${shopML || "(SHOP_DOMAIN not set)"}". ` +
+        `No Shopify session found for shop "${shopML || "(no ShopSettings row saved yet — open the app's Settings or Account page once)"}". ` +
           `The app may not be installed on this store yet, or its offline session was lost — reinstall the app on this store.`,
         { status: 500 }
       );

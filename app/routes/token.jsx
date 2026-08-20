@@ -1,11 +1,16 @@
 import { getCode } from "../utils/authCodes.server";
 import { createOIDCToken } from "../utils/oidc.server";
+import { getShopSettingsML } from "../utils/providerCredentials.server";
 
 export async function action({ request: requestML }) {
 
   const urlML = new URL(requestML.url);
   const hostML = requestML.headers.get("x-forwarded-host") || urlML.host;
   const issuerML = `https://${hostML}`;
+
+  const settingsML = await getShopSettingsML();
+  const configuredClientIdML = settingsML?.oidcClientId || process.env.OIDC_CLIENT_ID;
+  const configuredClientSecretML = settingsML?.oidcClientSecret || process.env.OIDC_CLIENT_SECRET;
 
   const bodyML = await requestML.text();
 
@@ -26,8 +31,10 @@ export async function action({ request: requestML }) {
   }
 
   if (
-    client_idML !== process.env.OIDC_CLIENT_ID ||
-    client_secretML !== process.env.OIDC_CLIENT_SECRET
+    !configuredClientIdML ||
+    !configuredClientSecretML ||
+    client_idML !== configuredClientIdML ||
+    client_secretML !== configuredClientSecretML
   ) {
     return Response.json(
       { error: "invalid_client" },
