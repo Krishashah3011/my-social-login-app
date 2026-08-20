@@ -151,6 +151,7 @@ model ShopSettings {
 
   oidcClientId     String?
   oidcClientSecret String?
+  oidcWellKnownUrl String?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

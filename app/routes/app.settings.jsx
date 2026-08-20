@@ -76,6 +76,7 @@ export const action = async ({ request: requestML }) => {
       amazonEnabled: formDataML.get("amazonEnabled") === "true",
       oidcClientId: formDataML.get("oidcClientId") || null,
       oidcClientSecret: formDataML.get("oidcClientSecret") || null,
+      oidcWellKnownUrl: formDataML.get("oidcWellKnownUrl") || null,
       ...clientDataML,
     },
   });
@@ -184,32 +185,32 @@ function GripIcon() {
 
 function EyeIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="20" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M1.5 9C1.5 9 4.5 3.5 9 3.5C13.5 3.5 16.5 9 16.5 9C16.5 9 13.5 14.5 9 14.5C4.5 14.5 1.5 9 1.5 9Z"
-        stroke={GRAY_OFF_ML}
-        strokeWidth="1.4"
+        stroke={BLUE_ML}
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="9" cy="9" r="2.25" stroke={GRAY_OFF_ML} strokeWidth="1.4" />
+      <circle cx="9" cy="9" r="2.25" stroke={BLUE_ML} strokeWidth="1.5" />
     </svg>
   );
 }
 
 function EyeOffIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="20" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M2.25 2.25L15.75 15.75"
-        stroke={GRAY_OFF_ML}
-        strokeWidth="1.4"
+        stroke={BLUE_ML}
+        strokeWidth="1.5"
         strokeLinecap="round"
       />
       <path
         d="M7.7 4.05C8.12 3.9 8.55 3.83 9 3.83C13.5 3.83 16.5 9 16.5 9C16.06 9.77 15.13 11.03 13.79 12.09M4.9 5.24C3.06 6.53 1.5 9 1.5 9C1.5 9 4.5 14.17 9 14.17C10.28 14.17 11.4 13.75 12.33 13.14"
-        stroke={GRAY_OFF_ML}
-        strokeWidth="1.4"
+        stroke={BLUE_ML}
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -449,8 +450,8 @@ const stylesML = {
     marginBottom: "16px",
   },
   clientCard: {
-    border: `1px solid ${BORDER_ML}`,
-    borderRadius: "6px",
+    border: `1px solid ${LICENSE_BORDER_ML}`,
+    borderRadius: "4px",
     background: "#fff",
     marginBottom: "10px",
     overflow: "hidden",
@@ -459,29 +460,44 @@ const stylesML = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "12px 10px",
-    background: LICENSE_BG_ML,
+  },
+  clientCardTitle: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "16px",
+    fontWeight: 600,
+    color: TEXT_DARK_ML,
   },
   clientCardBody: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
-    padding: "14px",
+    gap: "12px",
+    padding: "10px",
+  },
+  clientDivider: {
+    border: "none",
+    borderTop: `1px solid ${BORDER_ML}`,
+    width: "100%",
+  },
+  clientFieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
   },
   clientFieldLabel: {
     fontFamily: "Inter, sans-serif",
-    fontSize: "13px",
+    fontSize: "14px",
     fontWeight: 500,
-    color: TEXT_DARK_ML,
-    marginBottom: "4px",
+    color: TEXT_MUTED_ML,
   },
   clientInput: {
     width: "100%",
-    padding: "9px 10px",
-    borderRadius: "6px",
+    padding: "7px 8px",
+    borderRadius: "4px",
     border: `1px solid ${BORDER_ML}`,
     fontFamily: "Inter, sans-serif",
     fontSize: "14px",
+    fontWeight: 400,
+    letterSpacing: "0.02em",
     color: TEXT_DARK_ML,
     boxSizing: "border-box",
   },
@@ -492,21 +508,23 @@ const stylesML = {
   },
   secretInput: {
     width: "100%",
-    padding: "9px 38px 9px 10px",
-    borderRadius: "6px",
+    padding: "7px 34px 7px 8px",
+    borderRadius: "4px",
     border: `1px solid ${BORDER_ML}`,
     fontFamily: "Inter, sans-serif",
     fontSize: "14px",
+    fontWeight: 400,
+    letterSpacing: "0.02em",
     color: TEXT_DARK_ML,
     boxSizing: "border-box",
   },
   secretToggleButton: {
     position: "absolute",
-    right: "8px",
+    right: "6px",
     top: "50%",
     transform: "translateY(-50%)",
-    width: "24px",
-    height: "24px",
+    width: "20px",
+    height: "20px",
     border: "none",
     background: "transparent",
     display: "flex",
@@ -672,11 +690,11 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
 
   return (
     <div style={stylesML.clientCard}>
-      <div style={stylesML.clientCardHeader}>
-        <div style={stylesML.label}>Shopify Customer Accounts</div>
-      </div>
-
       <div style={stylesML.clientCardBody}>
+        <div style={stylesML.clientCardHeader}>
+          <div style={stylesML.clientCardTitle}>Shopify Customer Accounts</div>
+        </div>
+
         <div style={stylesML.subLabel}>
           This is the pair that Shopify uses to authenticate itself to this app — not tied to any
           social provider. Enter a value here (any string you choose), then click connect to provider
@@ -692,7 +710,9 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
           page under Settings → Customer accounts → Authentication.
         </div>
 
-        <div>
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Client ID</div>
           <input
             type="text"
@@ -702,7 +722,10 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
             placeholder="Enter OIDC Client ID"
           />
         </div>
-        <div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Client Secret</div>
           <div style={stylesML.secretInputWrap}>
             <input
@@ -723,6 +746,19 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
               {showSecretML ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
+          <div style={stylesML.clientFieldLabel}>Well-known or discovery endpoint URL</div>
+          <input
+            type="text"
+            style={stylesML.clientInput}
+            value={valuesML.wellKnownUrl}
+            onChange={(eML) => onFieldChangeML("wellKnownUrl", eML.target.value)}
+            placeholder="https://your-url/.well-known/openid-configuration"
+          />
         </div>
       </div>
     </div>
@@ -762,30 +798,32 @@ function ClientSettingsCard({
         onDragEndML(eML);
       }}
     >
-      <div style={stylesML.clientCardHeader}>
-        <span
-          style={stylesML.dragHandle}
-          title="Drag to reorder"
-          onMouseDown={() => {
-            dragAllowedRef.current = true;
-          }}
-          onMouseUp={() => {
-            dragAllowedRef.current = false;
-          }}
-        >
-          <GripIcon />
-        </span>
-        <div style={stylesML.logoPreview}>
-          <DefaultIconML />
-        </div>
-        <div style={stylesML.label}>{PROVIDER_NAMES_ML[providerKey]}</div>
-        <div style={{ marginLeft: "auto", ...stylesML.subLabel }}>
-          Sort order: {positionML}
-        </div>
-      </div>
-
       <div style={stylesML.clientCardBody}>
-        <div>
+        <div style={stylesML.clientCardHeader}>
+          <span
+            style={stylesML.dragHandle}
+            title="Drag to reorder"
+            onMouseDown={() => {
+              dragAllowedRef.current = true;
+            }}
+            onMouseUp={() => {
+              dragAllowedRef.current = false;
+            }}
+          >
+            <GripIcon />
+          </span>
+          <div style={stylesML.logoPreview}>
+            <DefaultIconML />
+          </div>
+          <div style={stylesML.clientCardTitle}>{PROVIDER_NAMES_ML[providerKey]}</div>
+          <div style={{ marginLeft: "auto", ...stylesML.subLabel }}>
+            Sort order: {positionML}
+          </div>
+        </div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Client ID</div>
           <input
             type="text"
@@ -795,7 +833,10 @@ function ClientSettingsCard({
             placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Client ID`}
           />
         </div>
-        <div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Client Secret</div>
           <div style={stylesML.secretInputWrap}>
             <input
@@ -817,7 +858,10 @@ function ClientSettingsCard({
             </button>
           </div>
         </div>
-        <div>
+
+        <div style={stylesML.clientDivider} />
+
+        <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Redirect URL</div>
           <input
             type="text"
@@ -997,6 +1041,7 @@ export default function Settings() {
   const [oidcValuesML, setOidcValuesML] = useState({
     clientId: settingsML.oidcClientId || "",
     clientSecret: settingsML.oidcClientSecret || "",
+    wellKnownUrl: settingsML.oidcWellKnownUrl || "",
   });
   const dragIndexRef = useRef(null);
   const [draggingIndexML, setDraggingIndexML] = useState(null);
@@ -1006,7 +1051,8 @@ export default function Settings() {
     JSON.stringify(clientValuesML) !== JSON.stringify(buildClientValuesML(settingsML)) ||
     JSON.stringify(orderML) !== JSON.stringify(buildOrderML(settingsML)) ||
     oidcValuesML.clientId !== (settingsML.oidcClientId || "") ||
-    oidcValuesML.clientSecret !== (settingsML.oidcClientSecret || "");
+    oidcValuesML.clientSecret !== (settingsML.oidcClientSecret || "") ||
+    oidcValuesML.wellKnownUrl !== (settingsML.oidcWellKnownUrl || "");
   const isDirtyML = isGeneralDirtyML || isClientDirtyML;
   const isSavingML = fetcherML.state !== "idle";
 
@@ -1061,6 +1107,7 @@ export default function Settings() {
 
     formDataML.set("oidcClientId", oidcValuesML.clientId);
     formDataML.set("oidcClientSecret", oidcValuesML.clientSecret);
+    formDataML.set("oidcWellKnownUrl", oidcValuesML.wellKnownUrl);
 
     orderML.forEach((providerKeyML, indexML) => {
       const fieldsML = clientValuesML[providerKeyML];
