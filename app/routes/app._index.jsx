@@ -390,46 +390,6 @@ export default function Index() {
 
       <div style={stylesML.card}>
         <h2 style={stylesML.sectionHeading}>
-          Required Setup Steps
-        </h2>
-
-        <hr style={stylesML.divider} />
-
-        {stepsML.map((stepML) => (
-          <div
-            key={stepML.id}
-            style={stylesML.stepRow}
-          >
-            <div>
-              <p style={stylesML.stepTitle}>
-                {stepML.title}
-              </p>
-
-              <p style={stylesML.stepDescription}>
-                {stepML.description}
-              </p>
-            </div>
-
-            {stepML.done ? (
-              <span style={stylesML.stepDonePill}>
-                {stepML.actionLabel}
-              </span>
-            ) : (
-              <Link
-                to={stepML.actionHref}
-                style={{ textDecoration: "none" }}
-              >
-                <button style={stylesML.stepButton}>
-                  {stepML.actionLabel}
-                </button>
-              </Link>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div style={stylesML.card}>
-        <h2 style={stylesML.sectionHeading}>
           Logins by Provider
         </h2>
 

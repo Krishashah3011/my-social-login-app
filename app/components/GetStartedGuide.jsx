@@ -280,27 +280,12 @@ export default function GetStartedGuide({
           <hr style={stylesML.stepDivider} />
 
           <div>
-            <p style={stylesML.stepTitle}>4. Enable App Status</p>
+            <p style={stylesML.stepTitle}>4. Enable App Status and Customize Icons</p>
 
             <p style={stylesML.stepDescription}>
               Visit Settings to make sure the app status is turned on and
-              choose which social login providers are enabled.
-            </p>
-
-            <Link to="/app/settings" style={stylesML.stepButton}>
-              Go to Settings
-              <ArrowRightIconML />
-            </Link>
-          </div>
-
-          <hr style={stylesML.stepDivider} />
-
-          <div>
-            <p style={stylesML.stepTitle}>5. Customize App Icons</p>
-
-            <p style={stylesML.stepDescription}>
-              In Settings, upload custom icons for each provider to replace
-              the default icons and match your store's branding.
+              choose which social login providers are enabled and upload custom icons for 
+              each provider to replace the default icons and match your store's branding.
             </p>
 
             <Link to="/app/settings" style={stylesML.stepButton}>
