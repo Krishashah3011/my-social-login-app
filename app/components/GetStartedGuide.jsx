@@ -259,9 +259,9 @@ export default function GetStartedGuide({
             </p>
 
             <p style={stylesML.stepDescription}>
-              For each provider you enable, create an app on that  provider’s developer
+              For each provider you enable, create an app on that provider’s developer
               platform to get your Client ID and Client Secret. Then, add those credentials to
-              the corresponding provider in this app’s client Settings page to connect it.
+              the corresponding provider in Client Settings tab in Settings to connect it.
               Social login buttons won't work at checkout until a provider is connected here.
             </p>
 
@@ -295,8 +295,7 @@ export default function GetStartedGuide({
 
             <p style={stylesML.stepDescription}>
               To let customers sign in with an email verification code, add your SMTP
-              provider's Host, Port, Username, Password and From Email under the SMTP Settings
-              tab in Settings.
+              provider's credentials under the SMTP Settings tab in Settings.
             </p>
 
             <Link to="/app/settings" style={stylesML.stepButton}>
