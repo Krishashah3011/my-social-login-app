@@ -171,6 +171,7 @@ const stylesML = {
 export default function GetStartedGuide({
   appName: appNameML,
   embedDeepLink: embedDeepLinkML,
+  identityProvidersDeepLink: identityProvidersDeepLinkML,
   registered: registeredML = false,
 }) {
   const [openML, setOpenML] = useState(true);
@@ -253,7 +254,33 @@ export default function GetStartedGuide({
           <hr style={stylesML.stepDivider} />
 
           <div>
-            <p style={stylesML.stepTitle}>3. Enable App Status</p>
+            <p style={stylesML.stepTitle}>
+              3. Add Your Provider in Shopify Customer Accounts
+            </p>
+
+            <p style={stylesML.stepDescription}>
+              For each provider you enable, go to Shopify's Customer
+              Accounts settings and create a login provider there too —
+              paste in the same Client ID and Client Secret you entered on
+              this app's Settings page. Social login buttons won't appear
+              at checkout until a provider is created here.
+            </p>
+
+            <a
+              href={identityProvidersDeepLinkML}
+              target="_blank"
+              rel="noreferrer"
+              style={stylesML.stepButton}
+            >
+              Manage Providers
+              <ArrowRightIconML />
+            </a>
+          </div>
+
+          <hr style={stylesML.stepDivider} />
+
+          <div>
+            <p style={stylesML.stepTitle}>4. Enable App Status</p>
 
             <p style={stylesML.stepDescription}>
               Visit Settings to make sure the app status is turned on and
@@ -269,7 +296,7 @@ export default function GetStartedGuide({
           <hr style={stylesML.stepDivider} />
 
           <div>
-            <p style={stylesML.stepTitle}>4. Customize App Icons</p>
+            <p style={stylesML.stepTitle}>5. Customize App Icons</p>
 
             <p style={stylesML.stepDescription}>
               In Settings, upload custom icons for each provider to replace

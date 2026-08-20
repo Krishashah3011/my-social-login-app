@@ -3,6 +3,7 @@ import { useLoaderData, useFetcher, Link } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { authenticateAdminOnceML } from "../utils/authCache.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
 
@@ -20,7 +21,7 @@ function generateSerialKeyML() {
 }
 
 export const loader = async ({ request: requestML }) => {
-  const { session: sessionML } = await authenticate.admin(requestML);
+  const { session: sessionML } = await authenticateAdminOnceML(requestML);
 
   let settingsML = await db.shopSettings.findUnique({
     where: { shop: sessionML.shop },
@@ -168,6 +169,48 @@ function GripIcon() {
       <circle cx="10" cy="10" r="1.5" fill={GRAY_OFF_ML} />
       <circle cx="4" cy="17" r="1.5" fill={GRAY_OFF_ML} />
       <circle cx="10" cy="17" r="1.5" fill={GRAY_OFF_ML} />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1.5 9C1.5 9 4.5 3.5 9 3.5C13.5 3.5 16.5 9 16.5 9C16.5 9 13.5 14.5 9 14.5C4.5 14.5 1.5 9 1.5 9Z"
+        stroke={GRAY_OFF_ML}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="9" cy="9" r="2.25" stroke={GRAY_OFF_ML} strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M2.25 2.25L15.75 15.75"
+        stroke={GRAY_OFF_ML}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7.7 4.05C8.12 3.9 8.55 3.83 9 3.83C13.5 3.83 16.5 9 16.5 9C16.06 9.77 15.13 11.03 13.79 12.09M4.9 5.24C3.06 6.53 1.5 9 1.5 9C1.5 9 4.5 14.17 9 14.17C10.28 14.17 11.4 13.75 12.33 13.14"
+        stroke={GRAY_OFF_ML}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.6 10.6C10.24 10.96 9.75 11.17 9.19 11.14C8.24 11.09 7.47 10.32 7.42 9.37C7.39 8.86 7.57 8.39 7.88 8.04"
+        stroke={GRAY_OFF_ML}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -433,6 +476,36 @@ const stylesML = {
     color: TEXT_DARK_ML,
     boxSizing: "border-box",
   },
+  secretInputWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  secretInput: {
+    width: "100%",
+    padding: "9px 38px 9px 10px",
+    borderRadius: "6px",
+    border: `1px solid ${BORDER_ML}`,
+    fontFamily: "Inter, sans-serif",
+    fontSize: "14px",
+    color: TEXT_DARK_ML,
+    boxSizing: "border-box",
+  },
+  secretToggleButton: {
+    position: "absolute",
+    right: "8px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "24px",
+    height: "24px",
+    border: "none",
+    background: "transparent",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
   dragHandle: {
     display: "flex",
     alignItems: "center",
@@ -597,6 +670,7 @@ function ClientSettingsCard({
   isDraggingML,
 }) {
   const DefaultIconML = DEFAULT_ICONS_ML[providerKey];
+  const [showSecretML, setShowSecretML] = useState(false);
 
   return (
     <div
@@ -633,13 +707,25 @@ function ClientSettingsCard({
         </div>
         <div>
           <div style={stylesML.clientFieldLabel}>Client Secret</div>
-          <input
-            type="text"
-            style={stylesML.clientInput}
-            value={valuesML.clientSecret}
-            onChange={(eML) => onFieldChangeML(providerKey, "clientSecret", eML.target.value)}
-            placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Client Secret`}
-          />
+          <div style={stylesML.secretInputWrap}>
+            <input
+              type={showSecretML ? "text" : "password"}
+              autoComplete="off"
+              style={stylesML.secretInput}
+              value={valuesML.clientSecret}
+              onChange={(eML) => onFieldChangeML(providerKey, "clientSecret", eML.target.value)}
+              placeholder={`Enter ${PROVIDER_NAMES_ML[providerKey]} Client Secret`}
+            />
+            <button
+              type="button"
+              style={stylesML.secretToggleButton}
+              onClick={() => setShowSecretML((prevML) => !prevML)}
+              aria-label={showSecretML ? "Hide client secret" : "Show client secret"}
+              title={showSecretML ? "Hide" : "Show"}
+            >
+              {showSecretML ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
         </div>
         <div>
           <div style={stylesML.clientFieldLabel}>Redirect URL</div>

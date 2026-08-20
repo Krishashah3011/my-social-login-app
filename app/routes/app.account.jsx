@@ -3,13 +3,14 @@ import { useLoaderData, useFetcher } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { authenticateAdminOnceML } from "../utils/authCache.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
 
 const BLUE_ML = "#073E74";
 
 export const loader = async ({ request: requestML }) => {
-  const { session: sessionML } = await authenticate.admin(requestML);
+  const { session: sessionML } = await authenticateAdminOnceML(requestML);
 
   let settingsML = await db.shopSettings.findUnique({
     where: { shop: sessionML.shop },

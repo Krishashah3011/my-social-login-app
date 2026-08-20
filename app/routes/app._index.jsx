@@ -1,6 +1,6 @@
 import { useLoaderData, Link } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { authenticate } from "../shopify.server";
+import { authenticateAdminOnceML } from "../utils/authCache.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
 import GetStartedGuide from "../components/GetStartedGuide";
@@ -20,7 +20,7 @@ import {
 } from "recharts";
 
 export const loader = async ({ request: requestML }) => {
-  const { session: sessionML } = await authenticate.admin(requestML);
+  const { session: sessionML } = await authenticateAdminOnceML(requestML);
 
   let settingsML = await db.shopSettings.findUnique({
     where: { shop: sessionML.shop },
@@ -174,11 +174,13 @@ export const loader = async ({ request: requestML }) => {
     Email: emailByDayML[dayML],
   }));
 
-  // uid comes from extensions/social-login-widget/shopify.extension.toml
   const embedExtensionUuidML = "5cbbea68-b1fc-5b70-4f63-8fd90c3685ac53138c82";
   const embedBlockHandleML = "social_login";
 
   const embedDeepLinkML = `https://${sessionML.shop}/admin/themes/current/editor?context=apps&appEmbed=${embedExtensionUuidML}/${embedBlockHandleML}`;
+
+  const storeHandleML = sessionML.shop.replace(".myshopify.com", "");
+  const identityProvidersDeepLinkML = `https://admin.shopify.com/store/${storeHandleML}/settings/customer_accounts/authentication/identity_providers`;
 
   return {
     settings: settingsML,
@@ -187,6 +189,7 @@ export const loader = async ({ request: requestML }) => {
     totalsByProvider: totalsByProviderML,
     trend: trendML,
     embedDeepLink: embedDeepLinkML,
+    identityProvidersDeepLink: identityProvidersDeepLinkML,
     registered: settingsML.registered,
   };
 };
@@ -342,6 +345,7 @@ export default function Index() {
     totalsByProvider: totalsByProviderML,
     trend: trendML,
     embedDeepLink: embedDeepLinkML,
+    identityProvidersDeepLink: identityProvidersDeepLinkML,
     registered: registeredML,
   } = useLoaderData();
 
@@ -358,6 +362,7 @@ export default function Index() {
       <GetStartedGuide
         appName="Milople Social Login App"
         embedDeepLink={embedDeepLinkML}
+        identityProvidersDeepLink={identityProvidersDeepLinkML}
         registered={registeredML}
       />
 

@@ -27,7 +27,6 @@ export async function loader({ request: requestML }) {
 
   const [stateML, redirect_uriML, nonceML] = stateDataML.split("|");
 
-  // Exchange Amazon code for token
   const tokenResponseML = await fetch("https://api.amazon.com/auth/o2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
