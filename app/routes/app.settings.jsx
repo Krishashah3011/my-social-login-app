@@ -472,6 +472,14 @@ const stylesML = {
     fontWeight: 600,
     color: TEXT_DARK_ML,
   },
+  devDashboardLink: {
+    fontFamily: "Inter, sans-serif",
+    fontSize: "12px",
+    fontWeight: 500,
+    color: BLUE_ML,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+  },
   clientCardBody: {
     display: "flex",
     flexDirection: "column",
@@ -774,6 +782,17 @@ const PROVIDER_NAMES_ML = {
   linkedin: "Linkedin",
 };
 
+// Assumption: these are the standard "create an app / get client id & secret" dashboard
+// URLs for each provider. Swap any of these if your setup uses a different console
+// (e.g. Login with Amazon vs Seller Central).
+const PROVIDER_DEV_DASHBOARD_LINKS_ML = {
+  google: "https://console.cloud.google.com/apis/credentials",
+  facebook: "https://developers.facebook.com/apps",
+  twitter: "https://developer.x.com/en/portal/dashboard",
+  amazon: "https://developer.amazon.com/settings/console/registration",
+  linkedin: "https://www.linkedin.com/developers/apps",
+};
+
 function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLinkML }) {
   const [showSecretML, setShowSecretML] = useState(false);
 
@@ -1002,6 +1021,16 @@ function ClientSettingsCard({
             <DefaultIconML />
           </div>
           <div style={stylesML.clientCardTitle}>{PROVIDER_NAMES_ML[providerKey]}</div>
+          {PROVIDER_DEV_DASHBOARD_LINKS_ML[providerKey] && (
+            <a
+              href={PROVIDER_DEV_DASHBOARD_LINKS_ML[providerKey]}
+              target="_blank"
+              rel="noreferrer"
+              style={stylesML.devDashboardLink}
+            >
+              Get Client ID &amp; Secret ↗
+            </a>
+          )}
           <div style={{ marginLeft: "auto", ...stylesML.subLabel }}>
             Sort order: {positionML}
           </div>
