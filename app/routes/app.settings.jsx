@@ -588,6 +588,90 @@ function saveButtonStyleML(disabledML) {
   };
 }
 
+const tabNavRowStyleML = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginTop: "20px",
+};
+
+function backNavButtonStyleML(disabledML) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "10px 20px",
+    borderRadius: "8px",
+    border: `1px solid ${BORDER_ML}`,
+    background: LICENSE_BG_ML,
+    color: disabledML ? "#A6A6A6" : TEXT_DARK_ML,
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: disabledML ? "default" : "pointer",
+    opacity: disabledML ? 0.6 : 1,
+  };
+}
+
+function nextNavButtonStyleML(disabledML) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "none",
+    background: BLUE_ML,
+    color: "#fff",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 600,
+    fontSize: "14px",
+    cursor: disabledML ? "default" : "pointer",
+    opacity: disabledML ? 0.6 : 1,
+  };
+}
+
+function ChevronLeftIconML() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronRightIconML() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TabNavRowML({ onBackML, onNextML, isFirstML, isLastML }) {
+  return (
+    <div style={tabNavRowStyleML}>
+      <button
+        type="button"
+        style={backNavButtonStyleML(isFirstML)}
+        disabled={isFirstML}
+        onClick={onBackML}
+      >
+        <ChevronLeftIconML />
+        Back
+      </button>
+      <button
+        type="button"
+        style={nextNavButtonStyleML(isLastML)}
+        disabled={isLastML}
+        onClick={onNextML}
+      >
+        Next
+        <ChevronRightIconML />
+      </button>
+    </div>
+  );
+}
+
 function LogoUploadButton({ providerKey, enabled, hasCustomLogo }) {
   const uploadFetcherML = useFetcher();
   const resetFetcherML = useFetcher();
@@ -1128,6 +1212,14 @@ export default function Settings() {
   const shopifyML = useAppBridge();
   const [showPreviewML, setShowPreviewML] = useState(false);
   const [activeTabML, setActiveTabML] = useState("general");
+  const tabOrderML = ["general", "client", "smtp"];
+  const activeTabIndexML = tabOrderML.indexOf(activeTabML);
+  const goBackTabML = () => {
+    if (activeTabIndexML > 0) setActiveTabML(tabOrderML[activeTabIndexML - 1]);
+  };
+  const goNextTabML = () => {
+    if (activeTabIndexML < tabOrderML.length - 1) setActiveTabML(tabOrderML[activeTabIndexML + 1]);
+  };
 
   const [valuesML, setValuesML] = useState({
     appEnabled: settingsML.appEnabled,
@@ -1387,6 +1479,13 @@ export default function Settings() {
               logoUrl={settingsML.amazonLogo}
             />
           </div>
+
+          <TabNavRowML
+            onBackML={goBackTabML}
+            onNextML={goNextTabML}
+            isFirstML={activeTabIndexML === 0}
+            isLastML={activeTabIndexML === tabOrderML.length - 1}
+          />
         </div>
         )}
 
@@ -1422,6 +1521,13 @@ export default function Settings() {
               />
             ))}
           </div>
+
+          <TabNavRowML
+            onBackML={goBackTabML}
+            onNextML={goNextTabML}
+            isFirstML={activeTabIndexML === 0}
+            isLastML={activeTabIndexML === tabOrderML.length - 1}
+          />
         </div>
         )}
 
@@ -1437,6 +1543,13 @@ export default function Settings() {
             onFieldChangeML={(fieldML, valML) =>
               setSmtpValuesML((prevML) => ({ ...prevML, [fieldML]: valML }))
             }
+          />
+
+          <TabNavRowML
+            onBackML={goBackTabML}
+            onNextML={goNextTabML}
+            isFirstML={activeTabIndexML === 0}
+            isLastML={activeTabIndexML === tabOrderML.length - 1}
           />
         </div>
         )}
