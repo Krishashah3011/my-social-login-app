@@ -41,10 +41,22 @@ export const loader = async ({ request: requestML }) => {
   const storeHandleML = sessionML.shop.replace(".myshopify.com", "");
   const identityProvidersDeepLinkML = `https://admin.shopify.com/store/${storeHandleML}/settings/customer_accounts/authentication/identity_providers`;
 
+  const hostML = requestML.headers.get("x-forwarded-host") || new URL(requestML.url).host;
+  const defaultCallbackUrlsML = {
+    google: `https://${hostML}/google/callback`,
+    facebook: `https://${hostML}/facebook/callback`,
+    twitter: `https://${hostML}/twitter/callback`,
+    amazon: `https://${hostML}/amazon/callback`,
+    linkedin: `https://${hostML}/linked/callback`,
+  };
+  const defaultWellKnownUrlML = `https://${hostML}/.well-known/openid-configuration`;
+
   return {
     settings: settingsML,
     registered: settingsML.registered,
     identityProvidersDeepLink: identityProvidersDeepLinkML,
+    defaultCallbackUrls: defaultCallbackUrlsML,
+    defaultWellKnownUrl: defaultWellKnownUrlML,
   };
 };
 
@@ -225,6 +237,33 @@ function EyeOffIcon() {
         stroke={BLUE_ML}
         strokeWidth="1.5"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6.75" y="6.75" width="9" height="9" rx="1.5" stroke={GRAY_OFF_ML} strokeWidth="1.4" />
+      <path
+        d="M4.5 11.25H3.75C3.05964 11.25 2.5 10.6904 2.5 10V3.75C2.5 3.05964 3.05964 2.5 3.75 2.5H10C10.6904 2.5 11.25 3.05964 11.25 3.75V4.5"
+        stroke={GRAY_OFF_ML}
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M4 9.5L7.25 12.75L14 5.5"
+        stroke="#1F8A3D"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -546,6 +585,42 @@ const stylesML = {
     cursor: "pointer",
     padding: 0,
   },
+  linkInputWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  linkInput: {
+    width: "100%",
+    padding: "7px 40px 7px 8px",
+    borderRadius: "4px",
+    border: `1px solid ${BORDER_ML}`,
+    fontFamily: "Inter, sans-serif",
+    fontSize: "14px",
+    fontWeight: 400,
+    letterSpacing: "0.02em",
+    color: TEXT_MUTED_ML,
+    background: LICENSE_BG_ML,
+    boxSizing: "border-box",
+    cursor: "default",
+    outline: "none",
+  },
+  copyButton: {
+    position: "absolute",
+    right: "6px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "26px",
+    height: "26px",
+    border: "none",
+    background: "transparent",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+    borderRadius: "4px",
+  },
   dragHandle: {
     display: "flex",
     alignItems: "center",
@@ -569,29 +644,37 @@ function tabButtonStyleML(activeML) {
   };
 }
 
-function saveWrapperStyleML(disabledML) {
+function saveWrapperStyleML() {
   return {
     display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "2px",
     borderRadius: "8px",
-    background: disabledML
-      ? "linear-gradient(180deg, #9a9a9a 0%, #6f6f6f 100%)"
-      : "linear-gradient(180deg, #2A2A2A 0%, #000000 100%)",
+    width: "136px",
+    height: "42px",
+    boxSizing: "border-box",
+    background: "linear-gradient(180deg, #2A2A2A 0%, #000000 100%)",
   };
 }
 
 function saveButtonStyleML(disabledML) {
   return {
-    padding: "8px 24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "132px",
+    height: "38px",
+    boxSizing: "border-box",
+    padding: "7px 10px",
     borderRadius: "6px",
-    border: `1px solid ${disabledML ? "#7a7a7a" : "#353535"}`,
-    background: disabledML
-      ? "linear-gradient(180deg, #a8a8a8 0%, #7d7d7d 100%)"
-      : "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
+    border: "1px solid #353535",
+    background: "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
     color: "#fff",
     fontFamily: "Inter, sans-serif",
     fontWeight: 600,
     fontSize: "16px",
+    lineHeight: "19px",
     cursor: disabledML ? "default" : "pointer",
   };
 }
@@ -795,6 +878,17 @@ const PROVIDER_DEV_DASHBOARD_LINKS_ML = {
 
 function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLinkML }) {
   const [showSecretML, setShowSecretML] = useState(false);
+  const [copiedML, setCopiedML] = useState(false);
+
+  const handleCopyML = async () => {
+    try {
+      await navigator.clipboard.writeText(valuesML.wellKnownUrl || "");
+    } catch {
+      // clipboard API unavailable — ignore silently
+    }
+    setCopiedML(true);
+    setTimeout(() => setCopiedML(false), 1500);
+  };
 
   return (
     <div style={stylesML.clientCard}>
@@ -860,13 +954,24 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
 
         <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Well-known or discovery endpoint URL</div>
-          <input
-            type="text"
-            style={stylesML.clientInput}
-            value={valuesML.wellKnownUrl}
-            onChange={(eML) => onFieldChangeML("wellKnownUrl", eML.target.value)}
-            placeholder="https://your-url/.well-known/openid-configuration"
-          />
+          <div style={stylesML.linkInputWrap}>
+            <input
+              type="text"
+              readOnly //remove when to write
+              style={stylesML.linkInput}
+              value={valuesML.wellKnownUrl}
+              //onChange={(eML) => onFieldChangeML("wellKnownUrl", eML.target.value)}
+            />
+            <button
+              type="button"
+              style={stylesML.copyButton}
+              onClick={handleCopyML}
+              aria-label="Copy well-known URL"
+              title={copiedML ? "Copied!" : "Copy"}
+            >
+              {copiedML ? <CheckIcon /> : <CopyIcon />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -983,7 +1088,18 @@ function ClientSettingsCard({
 }) {
   const DefaultIconML = DEFAULT_ICONS_ML[providerKey];
   const [showSecretML, setShowSecretML] = useState(false);
+  const [copiedML, setCopiedML] = useState(false);
   const dragAllowedRef = useRef(false);
+
+  const handleCopyML = async () => {
+    try {
+      await navigator.clipboard.writeText(valuesML.callbackUrl || "");
+    } catch {
+      // clipboard API unavailable — ignore silently
+    }
+    setCopiedML(true);
+    setTimeout(() => setCopiedML(false), 1500);
+  };
 
   return (
     <div
@@ -1078,13 +1194,24 @@ function ClientSettingsCard({
 
         <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Redirect URL</div>
-          <input
-            type="text"
-            style={stylesML.clientInput}
-            value={valuesML.callbackUrl}
-            onChange={(eML) => onFieldChangeML(providerKey, "callbackUrl", eML.target.value)}
-            placeholder={`https://your-url/${providerKey === "linkedin" ? "linked" : providerKey}/callback`}
-          />
+          <div style={stylesML.linkInputWrap}>
+            <input
+              type="text"
+              readOnly //remove when to write
+              style={stylesML.linkInput}
+              value={valuesML.callbackUrl}
+              //onChange={(eML) => onFieldChangeML(providerKey, "callbackUrl", eML.target.value)}
+            />
+            <button
+              type="button"
+              style={stylesML.copyButton}
+              onClick={handleCopyML}
+              aria-label="Copy redirect URL"
+              title={copiedML ? "Copied!" : "Copy"}
+            >
+              {copiedML ? <CheckIcon /> : <CopyIcon />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1216,13 +1343,13 @@ function LockIcon() {
   );
 }
 
-function buildClientValuesML(settingsML) {
+function buildClientValuesML(settingsML, defaultCallbackUrlsML = {}) {
   const resultML = {};
   CLIENT_PROVIDERS_ML.forEach((providerML) => {
     resultML[providerML] = {
       clientId: settingsML[`${providerML}ClientId`] || "",
       clientSecret: settingsML[`${providerML}ClientSecret`] || "",
-      callbackUrl: settingsML[`${providerML}CallbackUrl`] || "",
+      callbackUrl: settingsML[`${providerML}CallbackUrl`] || defaultCallbackUrlsML[providerML] || "",
       sortOrder: settingsML[`${providerML}SortOrder`] ?? 1,
     };
   });
@@ -1236,7 +1363,13 @@ function buildOrderML(settingsML) {
 }
 
 export default function Settings() {
-  const { settings: settingsML, registered: registeredML, identityProvidersDeepLink: identityProvidersDeepLinkML } = useLoaderData();
+  const {
+    settings: settingsML,
+    registered: registeredML,
+    identityProvidersDeepLink: identityProvidersDeepLinkML,
+    defaultCallbackUrls: defaultCallbackUrlsML,
+    defaultWellKnownUrl: defaultWellKnownUrlML,
+  } = useLoaderData();
   const fetcherML = useFetcher();
   const shopifyML = useAppBridge();
   const [showPreviewML, setShowPreviewML] = useState(false);
@@ -1259,12 +1392,12 @@ export default function Settings() {
     amazonEnabled: settingsML.amazonEnabled,
   });
 
-  const [clientValuesML, setClientValuesML] = useState(() => buildClientValuesML(settingsML));
+  const [clientValuesML, setClientValuesML] = useState(() => buildClientValuesML(settingsML, defaultCallbackUrlsML));
   const [orderML, setOrderML] = useState(() => buildOrderML(settingsML));
   const [oidcValuesML, setOidcValuesML] = useState({
     clientId: settingsML.oidcClientId || "",
     clientSecret: settingsML.oidcClientSecret || "",
-    wellKnownUrl: settingsML.oidcWellKnownUrl || "",
+    wellKnownUrl: settingsML.oidcWellKnownUrl || defaultWellKnownUrlML || "",
   });
   const [smtpValuesML, setSmtpValuesML] = useState({
     host: settingsML.smtpHost || "",
@@ -1278,11 +1411,11 @@ export default function Settings() {
 
   const isGeneralDirtyML = Object.keys(valuesML).some((keyML) => valuesML[keyML] !== settingsML[keyML]);
   const isClientDirtyML =
-    JSON.stringify(clientValuesML) !== JSON.stringify(buildClientValuesML(settingsML)) ||
+    JSON.stringify(clientValuesML) !== JSON.stringify(buildClientValuesML(settingsML, defaultCallbackUrlsML)) ||
     JSON.stringify(orderML) !== JSON.stringify(buildOrderML(settingsML)) ||
     oidcValuesML.clientId !== (settingsML.oidcClientId || "") ||
     oidcValuesML.clientSecret !== (settingsML.oidcClientSecret || "") ||
-    oidcValuesML.wellKnownUrl !== (settingsML.oidcWellKnownUrl || "");
+    oidcValuesML.wellKnownUrl !== (settingsML.oidcWellKnownUrl || defaultWellKnownUrlML || "");
   const isSmtpDirtyML =
     smtpValuesML.host !== (settingsML.smtpHost || "") ||
     smtpValuesML.port !== (settingsML.smtpPort || "") ||
@@ -1394,7 +1527,7 @@ export default function Settings() {
             <h1 style={stylesML.heading}>Configurations</h1>
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
-            <div style={saveWrapperStyleML(false)}>
+            <div style={saveWrapperStyleML()}>
               <button
                 style={saveButtonStyleML(false)}
                 onClick={() => setShowPreviewML(true)}
@@ -1402,10 +1535,10 @@ export default function Settings() {
                 Login Preview
               </button>
             </div>
-            <div style={saveWrapperStyleML(!isDirtyML || isSavingML)}>
+            <div style={saveWrapperStyleML()}>
               <button
-                style={saveButtonStyleML(!isDirtyML || isSavingML)}
-                disabled={!isDirtyML || isSavingML}
+                style={saveButtonStyleML(isSavingML)}
+                disabled={isSavingML}
                 onClick={handleSaveML}
               >
                 {isSavingML ? "Saving..." : "Save Settings"}
