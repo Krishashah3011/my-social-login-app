@@ -865,9 +865,6 @@ const PROVIDER_NAMES_ML = {
   linkedin: "Linkedin",
 };
 
-// Assumption: these are the standard "create an app / get client id & secret" dashboard
-// URLs for each provider. Swap any of these if your setup uses a different console
-// (e.g. Login with Amazon vs Seller Central).
 const PROVIDER_DEV_DASHBOARD_LINKS_ML = {
   google: "https://console.cloud.google.com/apis/credentials",
   facebook: "https://developers.facebook.com/apps",
@@ -884,7 +881,6 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
     try {
       await navigator.clipboard.writeText(valuesML.wellKnownUrl || "");
     } catch {
-      // clipboard API unavailable — ignore silently
     }
     setCopiedML(true);
     setTimeout(() => setCopiedML(false), 1500);
@@ -1095,7 +1091,6 @@ function ClientSettingsCard({
     try {
       await navigator.clipboard.writeText(valuesML.callbackUrl || "");
     } catch {
-      // clipboard API unavailable — ignore silently
     }
     setCopiedML(true);
     setTimeout(() => setCopiedML(false), 1500);
