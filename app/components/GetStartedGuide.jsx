@@ -7,10 +7,19 @@ const TEXT_BLACKML = "#000000";
 const TEXT_MUTEDML = "#616161";
 
 const InfoIconML = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="8" cy="8" r="7" stroke="#fff" strokeWidth="1.4" />
-    <rect x="7.25" y="6.6" width="1.5" height="5.4" rx="0.6" fill="#fff" />
-    <circle cx="8" cy="4.4" r="0.95" fill="#fff" />
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <text
+      x="12"
+      y="17.5"
+      textAnchor="middle"
+      fontFamily="Georgia, 'Times New Roman', serif"
+      fontStyle="italic"
+      fontWeight="700"
+      fontSize="17"
+      fill="#1B1B4D"
+    >
+      i
+    </text>
   </svg>
 );
 
@@ -74,10 +83,10 @@ const stylesML = {
     gap: "12px",
   },
   iconBox: {
-    width: "28px",
-    height: "28px",
-    minWidth: "28px",
-    borderRadius: "8px",
+    width: "24px",
+    height: "24px",
+    minWidth: "24px",
+    borderRadius: "4px",
     background: GREENML,
     display: "flex",
     alignItems: "center",
