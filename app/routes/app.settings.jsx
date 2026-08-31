@@ -6,6 +6,7 @@ import { authenticate } from "../shopify.server";
 import { authenticateAdminOnceML } from "../utils/authCache.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
+import crypto from "crypto";
 
 const BLUE_ML = "#073E74";
 const GRAY_OFF_ML = "#707072";
@@ -20,6 +21,14 @@ function generateSerialKeyML() {
   return `SER-${Date.now()}-${randML}`;
 }
 
+function generateOidcClientIdML() {
+  return `oidc_${crypto.randomBytes(16).toString("hex")}`;
+}
+
+function generateOidcClientSecretML() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
 export const loader = async ({ request: requestML }) => {
   const { session: sessionML } = await authenticateAdminOnceML(requestML);
 
@@ -29,12 +38,21 @@ export const loader = async ({ request: requestML }) => {
 
   if (!settingsML) {
     settingsML = await db.shopSettings.create({
-      data: { shop: sessionML.shop, serialKey: generateSerialKeyML() },
+      data: {
+        shop: sessionML.shop,
+        serialKey: generateSerialKeyML(),
+        oidcClientId: generateOidcClientIdML(),
+        oidcClientSecret: generateOidcClientSecretML(),
+      },
     });
-  } else if (!settingsML.serialKey) {
+  } else if (!settingsML.serialKey || !settingsML.oidcClientId || !settingsML.oidcClientSecret) {
     settingsML = await db.shopSettings.update({
       where: { shop: sessionML.shop },
-      data: { serialKey: generateSerialKeyML() },
+      data: {
+        serialKey: settingsML.serialKey || generateSerialKeyML(),
+        oidcClientId: settingsML.oidcClientId || generateOidcClientIdML(),
+        oidcClientSecret: settingsML.oidcClientSecret || generateOidcClientSecretML(),
+      },
     });
   }
 
@@ -86,8 +104,6 @@ export const action = async ({ request: requestML }) => {
       facebookEnabled: formDataML.get("facebookEnabled") === "true",
       linkedinEnabled: formDataML.get("linkedinEnabled") === "true",
       amazonEnabled: formDataML.get("amazonEnabled") === "true",
-      oidcClientId: formDataML.get("oidcClientId") || null,
-      oidcClientSecret: formDataML.get("oidcClientSecret") || null,
       oidcWellKnownUrl: formDataML.get("oidcWellKnownUrl") || null,
       smtpHost: formDataML.get("smtpHost") || null,
       smtpPort: formDataML.get("smtpPort") || null,
@@ -505,6 +521,24 @@ const stylesML = {
     alignItems: "center",
     gap: "10px",
   },
+  manageProvidersButton: {
+    marginLeft: "auto",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    padding: "7px 14px",
+    borderRadius: "6px",
+    border: "1px solid #353535",
+    background: "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
+    color: "#fff",
+    fontFamily: "Inter, sans-serif",
+    fontSize: "13px",
+    fontWeight: 600,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+  },
   clientCardTitle: {
     fontFamily: "Inter, sans-serif",
     fontSize: "16px",
@@ -873,17 +907,16 @@ const PROVIDER_DEV_DASHBOARD_LINKS_ML = {
   linkedin: "https://www.linkedin.com/developers/apps",
 };
 
-function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLinkML }) {
-  const [showSecretML, setShowSecretML] = useState(false);
-  const [copiedML, setCopiedML] = useState(false);
+function OidcSettingsCard({ valuesML, identityProvidersDeepLinkML }) {
+  const [copiedFieldML, setCopiedFieldML] = useState(null);
 
-  const handleCopyML = async () => {
+  const handleCopyML = async (fieldML, textML) => {
     try {
-      await navigator.clipboard.writeText(valuesML.wellKnownUrl || "");
+      await navigator.clipboard.writeText(textML || "");
     } catch {
     }
-    setCopiedML(true);
-    setTimeout(() => setCopiedML(false), 1500);
+    setCopiedFieldML(fieldML);
+    setTimeout(() => setCopiedFieldML((prevML) => (prevML === fieldML ? null : prevML)), 1500);
   };
 
   return (
@@ -891,34 +924,46 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
       <div style={stylesML.clientCardBody}>
         <div style={stylesML.clientCardHeader}>
           <div style={stylesML.clientCardTitle}>Shopify Customer Accounts</div>
+          {identityProvidersDeepLinkML && (
+            <a
+              href={identityProvidersDeepLinkML}
+              target="_blank"
+              rel="noreferrer"
+              style={stylesML.manageProvidersButton}
+            >
+              Manage Providers
+            </a>
+          )}
         </div>
 
         <div style={stylesML.subLabel}>
           This is the pair that Shopify uses to authenticate itself to this app — not tied to any
-          social provider. Enter a value here (any string you choose), then click connect to provider
-          and paste the exact same Client ID, Client Secret and Well-known or discovery endpoint URL
-          into your store's{" "}
-          {identityProvidersDeepLinkML ? (
-            <a href={identityProvidersDeepLinkML} target="_blank" rel="noreferrer">
-              Manage Providers
-            </a>
-          ) : (
-            "Manage Providers"
-          )}{" "}
-          page under Settings → Customer accounts → Authentication.
+          social provider. It's generated automatically when the app is installed and can't be
+          changed. Copy the Client ID, Client Secret and Well-known or discovery endpoint URL below
+          into your store's Manage Providers page under Settings → Customer accounts → Authentication.
         </div>
 
         <div style={stylesML.clientDivider} />
 
         <div style={stylesML.clientFieldGroup}>
           <div style={stylesML.clientFieldLabel}>Client ID</div>
-          <input
-            type="text"
-            style={stylesML.clientInput}
-            value={valuesML.clientId}
-            onChange={(eML) => onFieldChangeML("clientId", eML.target.value)}
-            placeholder="Enter OIDC Client ID"
-          />
+          <div style={stylesML.linkInputWrap}>
+            <input
+              type="text"
+              readOnly
+              style={stylesML.linkInput}
+              value={valuesML.clientId}
+            />
+            <button
+              type="button"
+              style={stylesML.copyButton}
+              onClick={() => handleCopyML("clientId", valuesML.clientId)}
+              aria-label="Copy client ID"
+              title={copiedFieldML === "clientId" ? "Copied!" : "Copy"}
+            >
+              {copiedFieldML === "clientId" ? <CheckIcon /> : <CopyIcon />}
+            </button>
+          </div>
         </div>
 
         <div style={stylesML.clientDivider} />
@@ -927,21 +972,20 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
           <div style={stylesML.clientFieldLabel}>Client Secret</div>
           <div style={stylesML.secretInputWrap}>
             <input
-              type={showSecretML ? "text" : "password"}
+              type="text"
+              readOnly
               autoComplete="off"
-              style={stylesML.secretInput}
+              style={{ ...stylesML.secretInput, ...stylesML.linkInput }}
               value={valuesML.clientSecret}
-              onChange={(eML) => onFieldChangeML("clientSecret", eML.target.value)}
-              placeholder="Enter OIDC Client Secret"
             />
             <button
               type="button"
-              style={stylesML.secretToggleButton}
-              onClick={() => setShowSecretML((prevML) => !prevML)}
-              aria-label={showSecretML ? "Hide client secret" : "Show client secret"}
-              title={showSecretML ? "Hide" : "Show"}
+              style={stylesML.copyButton}
+              onClick={() => handleCopyML("clientSecret", valuesML.clientSecret)}
+              aria-label="Copy client secret"
+              title={copiedFieldML === "clientSecret" ? "Copied!" : "Copy"}
             >
-              {showSecretML ? <EyeOffIcon /> : <EyeIcon />}
+              {copiedFieldML === "clientSecret" ? <CheckIcon /> : <CopyIcon />}
             </button>
           </div>
         </div>
@@ -953,19 +997,18 @@ function OidcSettingsCard({ valuesML, onFieldChangeML, identityProvidersDeepLink
           <div style={stylesML.linkInputWrap}>
             <input
               type="text"
-              readOnly //remove when to write
+              readOnly
               style={stylesML.linkInput}
               value={valuesML.wellKnownUrl}
-              //onChange={(eML) => onFieldChangeML("wellKnownUrl", eML.target.value)}
             />
             <button
               type="button"
               style={stylesML.copyButton}
-              onClick={handleCopyML}
+              onClick={() => handleCopyML("wellKnownUrl", valuesML.wellKnownUrl)}
               aria-label="Copy well-known URL"
-              title={copiedML ? "Copied!" : "Copy"}
+              title={copiedFieldML === "wellKnownUrl" ? "Copied!" : "Copy"}
             >
-              {copiedML ? <CheckIcon /> : <CopyIcon />}
+              {copiedFieldML === "wellKnownUrl" ? <CheckIcon /> : <CopyIcon />}
             </button>
           </div>
         </div>
@@ -1408,8 +1451,6 @@ export default function Settings() {
   const isClientDirtyML =
     JSON.stringify(clientValuesML) !== JSON.stringify(buildClientValuesML(settingsML, defaultCallbackUrlsML)) ||
     JSON.stringify(orderML) !== JSON.stringify(buildOrderML(settingsML)) ||
-    oidcValuesML.clientId !== (settingsML.oidcClientId || "") ||
-    oidcValuesML.clientSecret !== (settingsML.oidcClientSecret || "") ||
     oidcValuesML.wellKnownUrl !== (settingsML.oidcWellKnownUrl || defaultWellKnownUrlML || "");
   const isSmtpDirtyML =
     smtpValuesML.host !== (settingsML.smtpHost || "") ||
@@ -1469,8 +1510,6 @@ export default function Settings() {
     const formDataML = new FormData();
     Object.entries(valuesML).forEach(([keyML, valML]) => formDataML.set(keyML, String(valML)));
 
-    formDataML.set("oidcClientId", oidcValuesML.clientId);
-    formDataML.set("oidcClientSecret", oidcValuesML.clientSecret);
     formDataML.set("oidcWellKnownUrl", oidcValuesML.wellKnownUrl);
 
     formDataML.set("smtpHost", smtpValuesML.host);
@@ -1656,9 +1695,6 @@ export default function Settings() {
 
           <OidcSettingsCard
             valuesML={oidcValuesML}
-            onFieldChangeML={(fieldML, valML) =>
-              setOidcValuesML((prevML) => ({ ...prevML, [fieldML]: valML }))
-            }
             identityProvidersDeepLinkML={identityProvidersDeepLinkML}
           />
 
