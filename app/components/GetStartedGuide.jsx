@@ -8,18 +8,7 @@ const TEXT_MUTEDML = "#616161";
 
 const InfoIconML = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <text
-      x="12"
-      y="17.5"
-      textAnchor="middle"
-      fontFamily="Georgia, 'Times New Roman', serif"
-      fontStyle="italic"
-      fontWeight="700"
-      fontSize="17"
-      fill="#1B1B4D"
-    >
-      i
-    </text>
+  <image href="/info-icon.png" x="9" y="5" width="7" height="14" />
   </svg>
 );
 
