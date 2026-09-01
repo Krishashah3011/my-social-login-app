@@ -106,7 +106,7 @@ const stylesML = {
   intro: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: "18px",
     color: TEXT_MUTEDML,
     margin: "0 0 20px",
@@ -114,15 +114,15 @@ const stylesML = {
   stepTitle: {
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "14px",
-    lineHeight: "18px",
+    fontSize: "16px",
+    lineHeight: "20px",
     color: TEXT_BLACKML,
     margin: "0 0 6px",
   },
   stepDescription: {
     fontFamily: "Inter",
     fontWeight: 400,
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: "19px",
     color: TEXT_MUTEDML,
     margin: "0 0 14px",
@@ -137,7 +137,7 @@ const stylesML = {
     color: "#FFFFFF",
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "13px",
+    fontSize: "14px",
     lineHeight: "16px",
     border: "none",
     cursor: "pointer",
@@ -159,7 +159,7 @@ const stylesML = {
     color: "#1F7A3F",
     fontFamily: "Inter",
     fontWeight: 600,
-    fontSize: "13px",
+    fontSize: "14px",
   },
 };
 

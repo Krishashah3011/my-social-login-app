@@ -211,7 +211,7 @@ const stylesML = {
     cursor: "pointer",
   },
   registerHeading: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: 600,
     color: "#000",
     marginBottom: "20px",
@@ -225,7 +225,13 @@ const stylesML = {
     flexDirection: "column",
     gap: "20px",
   },
+  registerRow: {
+    display: "flex",
+    gap: "16px",
+  },
   registerFieldGroup: {
+    flex: 1,
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     gap: "6px",
@@ -445,51 +451,53 @@ function CreateAccountForm({ fetcher: fetcherML, saving: savingML }) {
 
       <form onSubmit={handleSubmitML} noValidate>
         <div style={stylesML.registerBox}>
-          <div style={stylesML.registerFieldGroup}>
-            <span style={stylesML.registerLabel}>Username</span>
-            <div
-              style={{
-                ...stylesML.registerInputBox,
-                ...(usernameErrorML ? { border: "1px solid #C0392B" } : {}),
-              }}
-            >
-              <PersonIcon />
-              <input
-                style={stylesML.registerInput}
-                placeholder="Enter username"
-                value={usernameDraftML}
-                disabled={savingML}
-                onChange={(eML) => {
-                  setUsernameDraftML(eML.target.value);
-                  if (usernameErrorML) setUsernameErrorML("");
+          <div style={stylesML.registerRow}>
+            <div style={stylesML.registerFieldGroup}>
+              <span style={stylesML.registerLabel}>Username</span>
+              <div
+                style={{
+                  ...stylesML.registerInputBox,
+                  ...(usernameErrorML ? { border: "1px solid #C0392B" } : {}),
                 }}
-              />
+              >
+                <PersonIcon />
+                <input
+                  style={stylesML.registerInput}
+                  placeholder="Enter username"
+                  value={usernameDraftML}
+                  disabled={savingML}
+                  onChange={(eML) => {
+                    setUsernameDraftML(eML.target.value);
+                    if (usernameErrorML) setUsernameErrorML("");
+                  }}
+                />
+              </div>
+              {usernameErrorML && <p style={stylesML.registerFieldError}>{usernameErrorML}</p>}
             </div>
-            {usernameErrorML && <p style={stylesML.registerFieldError}>{usernameErrorML}</p>}
-          </div>
 
-          <div style={stylesML.registerFieldGroup}>
-            <span style={stylesML.registerLabel}>Email</span>
-            <div
-              style={{
-                ...stylesML.registerInputBox,
-                ...(emailErrorML ? { border: "1px solid #C0392B" } : {}),
-              }}
-            >
-              <MailIcon />
-              <input
-                style={stylesML.registerInput}
-                type="email"
-                placeholder="Enter email"
-                value={emailDraftML}
-                disabled={savingML}
-                onChange={(eML) => {
-                  setEmailDraftML(eML.target.value);
-                  if (emailErrorML) setEmailErrorML("");
+            <div style={stylesML.registerFieldGroup}>
+              <span style={stylesML.registerLabel}>Email</span>
+              <div
+                style={{
+                  ...stylesML.registerInputBox,
+                  ...(emailErrorML ? { border: "1px solid #C0392B" } : {}),
                 }}
-              />
+              >
+                <MailIcon />
+                <input
+                  style={stylesML.registerInput}
+                  type="email"
+                  placeholder="Enter email"
+                  value={emailDraftML}
+                  disabled={savingML}
+                  onChange={(eML) => {
+                    setEmailDraftML(eML.target.value);
+                    if (emailErrorML) setEmailErrorML("");
+                  }}
+                />
+              </div>
+              {emailErrorML && <p style={stylesML.registerFieldError}>{emailErrorML}</p>}
             </div>
-            {emailErrorML && <p style={stylesML.registerFieldError}>{emailErrorML}</p>}
           </div>
 
           {errorML && <p style={stylesML.registerError}>{errorML}</p>}
