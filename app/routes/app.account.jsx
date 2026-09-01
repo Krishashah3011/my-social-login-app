@@ -274,6 +274,86 @@ const stylesML = {
     color: "#C0392B",
     margin: 0,
   },
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0, 0, 0, 0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  modalCard: {
+    background: "#fff",
+    borderRadius: "8px",
+    width: "700px",
+    maxWidth: "90vw",
+    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+    overflow: "hidden",
+  },
+  modalHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 24px",
+    borderBottom: "1px solid #e5e5e5",
+  },
+  modalTitle: {
+    fontFamily: "Inter",
+    fontSize: "18px",
+    fontWeight: 700,
+    color: "#000",
+    margin: 0,
+  },
+  modalCloseBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: BLUE_ML,
+  },
+  modalBody: {
+    padding: "24px",
+    borderBottom: "1px solid #e5e5e5",
+  },
+  modalBodyText: {
+    fontFamily: "Inter",
+    fontSize: "14px",
+    lineHeight: "20px",
+    color: "#333",
+    margin: 0,
+  },
+  modalFooter: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: "12px",
+    padding: "16px 24px",
+  },
+  modalCancelBtn: {
+    fontFamily: "Inter",
+    background: "#fff",
+    border: "1px solid #dbdbdb",
+    borderRadius: "6px",
+    padding: "10px 18px",
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#000",
+    cursor: "pointer",
+  },
+  modalDeleteBtn: {
+    fontFamily: "Inter",
+    background: "#D9401F",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 18px",
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#fff",
+    cursor: "pointer",
+  },
 };
 
 function EditableField({ icon, label, value, field, onSave, saving }) {
@@ -392,6 +472,46 @@ function CreateAccountForm({ fetcher: fetcherML, saving: savingML }) {
   );
 }
 
+function DeleteAccountModal({ onCancel, onConfirm, deleting }) {
+  return (
+    <div style={stylesML.modalOverlay} onClick={onCancel}>
+      <div style={stylesML.modalCard} onClick={(eML) => eML.stopPropagation()}>
+        <div style={stylesML.modalHeader}>
+          <h2 style={stylesML.modalTitle}>Delete Account</h2>
+          <button
+            type="button"
+            style={stylesML.modalCloseBtn}
+            onClick={onCancel}
+            aria-label="Close"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1L17 17M17 1L1 17" stroke={BLUE_ML} strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div style={stylesML.modalBody}>
+          <p style={stylesML.modalBodyText}>
+            Are you sure you want to delete your account? This will remove
+            all associated data and cannot be
+            <br />
+            undone.
+          </p>
+        </div>
+
+        <div style={stylesML.modalFooter}>
+          <button type="button" style={stylesML.modalCancelBtn} onClick={onCancel} disabled={deleting}>
+            Cancel
+          </button>
+          <button type="button" style={stylesML.modalDeleteBtn} onClick={onConfirm} disabled={deleting}>
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Account() {
   const {
     shop: shopML,
@@ -403,6 +523,7 @@ export default function Account() {
   } = useLoaderData();
   const fetcherML = useFetcher();
   const shopifyML = useAppBridge();
+  const [showDeleteModalML, setShowDeleteModalML] = useState(false);
 
   const savingML = fetcherML.state !== "idle";
 
@@ -414,6 +535,7 @@ export default function Account() {
     }
     if (fetcherML.data?.deleted) {
       shopifyML.toast.show("Account info cleared");
+      setShowDeleteModalML(false);
     }
   }, [fetcherML.data, shopifyML]);
 
@@ -421,14 +543,8 @@ export default function Account() {
     fetcherML.submit({ field: fieldML, value: valueML }, { method: "POST" });
   };
 
-  const handleDeleteML = () => {
-    if (
-      window.confirm(
-        "This will clear your saved username and email. This cannot be undone. Continue?",
-      )
-    ) {
-      fetcherML.submit({ intent: "delete" }, { method: "POST" });
-    }
+  const handleConfirmDeleteML = () => {
+    fetcherML.submit({ intent: "delete" }, { method: "POST" });
   };
 
   if (!registeredML) {
@@ -529,13 +645,21 @@ export default function Account() {
 
           <div style={stylesML.deleteWrap}>
             <div style={stylesML.deleteOuter}>
-              <div style={stylesML.deleteInner} onClick={handleDeleteML}>
+              <div style={stylesML.deleteInner} onClick={() => setShowDeleteModalML(true)}>
                 <span style={stylesML.deleteText}>Delete Account</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {showDeleteModalML && (
+        <DeleteAccountModal
+          onCancel={() => setShowDeleteModalML(false)}
+          onConfirm={handleConfirmDeleteML}
+          deleting={savingML}
+        />
+      )}
     </s-page>
   );
 }
