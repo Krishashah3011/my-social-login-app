@@ -340,14 +340,14 @@ const stylesML = {
     gap: "12px",
   },
   lockTitle: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "18px",
     color: TEXT_DARK_ML,
     margin: 0,
   },
   lockDescription: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "14px",
     color: TEXT_MUTED_ML,
@@ -362,7 +362,7 @@ const stylesML = {
     background: BLUE_ML,
     borderRadius: "8px",
     color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     textDecoration: "none",
@@ -374,7 +374,7 @@ const stylesML = {
     marginBottom: "16px",
   },
   heading: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "18px",
     letterSpacing: "0.02em",
@@ -388,7 +388,7 @@ const stylesML = {
     marginTop: "3px",
   },
   subtitleText: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "12px",
     color: TEXT_DARK_ML,
   },
@@ -411,7 +411,7 @@ const stylesML = {
     borderRadius: "4px",
   },
   licenseTitle: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "16px",
     fontWeight: 500,
     color: TEXT_DARK_ML,
@@ -427,13 +427,13 @@ const stylesML = {
     alignItems: "center",
   },
   label: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 500,
     color: TEXT_DARK_ML,
   },
   subLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "12px",
     fontWeight: 400,
     color: TEXT_MUTED_ML,
@@ -444,7 +444,7 @@ const stylesML = {
     background: "#000000",
     borderRadius: "4px",
     color: "#fff",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 500,
   },
@@ -532,7 +532,7 @@ const stylesML = {
     border: "1px solid #353535",
     background: "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
     color: "#fff",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "13px",
     fontWeight: 600,
     textDecoration: "none",
@@ -540,13 +540,13 @@ const stylesML = {
     cursor: "pointer",
   },
   clientCardTitle: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "16px",
     fontWeight: 600,
     color: TEXT_DARK_ML,
   },
   devDashboardLink: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "12px",
     fontWeight: 500,
     color: BLUE_ML,
@@ -570,7 +570,7 @@ const stylesML = {
     gap: "4px",
   },
   clientFieldLabel: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 500,
     color: TEXT_MUTED_ML,
@@ -580,7 +580,7 @@ const stylesML = {
     padding: "7px 8px",
     borderRadius: "4px",
     border: `1px solid ${BORDER_ML}`,
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 400,
     letterSpacing: "0.02em",
@@ -597,7 +597,7 @@ const stylesML = {
     padding: "7px 34px 7px 8px",
     borderRadius: "4px",
     border: `1px solid ${BORDER_ML}`,
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 400,
     letterSpacing: "0.02em",
@@ -629,7 +629,7 @@ const stylesML = {
     padding: "7px 40px 7px 8px",
     borderRadius: "4px",
     border: `1px solid ${BORDER_ML}`,
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontSize: "14px",
     fontWeight: 400,
     letterSpacing: "0.02em",
@@ -669,7 +669,7 @@ function tabButtonStyleML(activeML) {
     padding: "10px 20px",
     borderRadius: "6px",
     border: "none",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     cursor: "pointer",
@@ -705,7 +705,7 @@ function saveButtonStyleML(disabledML) {
     border: "1px solid #353535",
     background: "linear-gradient(180deg, #1C1C1C 0%, #404040 100%)",
     color: "#fff",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "16px",
     lineHeight: "19px",
@@ -730,7 +730,7 @@ function backNavButtonStyleML(disabledML) {
     border: `1px solid ${BORDER_ML}`,
     background: LICENSE_BG_ML,
     color: disabledML ? "#A6A6A6" : TEXT_DARK_ML,
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     cursor: disabledML ? "default" : "pointer",
@@ -748,7 +748,7 @@ function nextNavButtonStyleML(disabledML) {
     border: "none",
     background: BLUE_ML,
     color: "#fff",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     cursor: disabledML ? "default" : "pointer",
@@ -1316,7 +1316,7 @@ function LoginPreviewModal({ values, settings, onClose }) {
           ✕
         </button>
 
-        <div style={{ fontSize: "12px", color: "#707072", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
+        <div style={{ fontSize: "12px", color: "#707072", marginBottom: "16px", fontFamily: "Inter" }}>
           Storefront Login Preview
         </div>
 

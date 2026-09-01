@@ -106,7 +106,7 @@ const stylesML = {
     alignItems: "flex-start",
     justifyContent: "center",
     paddingTop: "80px",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     background: "#fff",
   },
   card: { width: "340px", textAlign: "center" },

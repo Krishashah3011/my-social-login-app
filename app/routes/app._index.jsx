@@ -232,7 +232,7 @@ const stylesML = {
   },
 
     sectionHeading: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "18px",
     lineHeight: "22px",
@@ -248,31 +248,6 @@ const stylesML = {
     width: "100%",
   },
 
-  progressLabel: {
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 500,
-    fontSize: "14px",
-    lineHeight: "17px",
-    color: TEXT_BLACK_ML,
-    marginBottom: "4px",
-  },
-
-  progressTrack: {
-    width: "100%",
-    height: "6px",
-    borderRadius: "100px",
-    background: DIVIDER_ML,
-    overflow: "hidden",
-  },
-
-  progressFill: (percentML) => ({
-    width: `${percentML}%`,
-    height: "100%",
-    borderRadius: "100px",
-    background: BLUE_ML,
-    transition: "width 0.3s ease",
-  }),
-
   stepRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -282,7 +257,7 @@ const stylesML = {
   },
 
   stepTitle: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 500,
     fontSize: "14px",
     lineHeight: "17px",
@@ -291,7 +266,7 @@ const stylesML = {
   },
 
   stepDescription: {
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 400,
     fontSize: "12px",
     lineHeight: "15px",
@@ -305,7 +280,7 @@ const stylesML = {
     background: BLUE_ML,
     borderRadius: "10px",
     color: "#FFFFFF",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
     lineHeight: "17px",
@@ -319,7 +294,7 @@ const stylesML = {
     background: "#E3F4E9",
     borderRadius: "10px",
     color: "#1F7A3F",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
     fontWeight: 600,
     fontSize: "14px",
   },
@@ -341,7 +316,6 @@ const stylesML = {
 export default function Index() {
   const {
     steps: stepsML,
-    percentComplete: percentCompleteML,
     totalsByProvider: totalsByProviderML,
     trend: trendML,
     embedDeepLink: embedDeepLinkML,
@@ -368,26 +342,6 @@ export default function Index() {
 
       {registeredML && (
       <>
-      <div style={stylesML.card}>
-        <h2 style={stylesML.sectionHeading}>
-          Your Setup Progress
-        </h2>
-
-        <hr style={stylesML.divider} />
-
-        <div>
-          <div style={stylesML.progressLabel}>
-            {percentCompleteML}% Complete
-          </div>
-
-          <div style={stylesML.progressTrack}>
-            <div
-              style={stylesML.progressFill(percentCompleteML)}
-            />
-          </div>
-        </div>
-      </div>
-
       <div style={stylesML.card}>
         <h2 style={stylesML.sectionHeading}>
           Logins by Provider

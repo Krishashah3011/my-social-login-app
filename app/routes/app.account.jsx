@@ -171,7 +171,7 @@ const stylesML = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
   },
   editBtn: {
     background: "none",
@@ -252,7 +252,7 @@ const stylesML = {
     border: "none",
     outline: "none",
     background: "transparent",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "Inter",
   },
   registerButtonWrap: {
     display: "flex",
