@@ -274,6 +274,12 @@ const stylesML = {
     color: "#C0392B",
     margin: 0,
   },
+  registerFieldError: {
+    fontFamily: "Inter",
+    fontSize: "12px",
+    color: "#C0392B",
+    margin: 0,
+  },
   modalOverlay: {
     position: "fixed",
     inset: 0,
@@ -411,12 +417,21 @@ function EditableField({ icon, label, value, field, onSave, saving }) {
 function CreateAccountForm({ fetcher: fetcherML, saving: savingML }) {
   const [usernameDraftML, setUsernameDraftML] = useState("");
   const [emailDraftML, setEmailDraftML] = useState("");
+  const [usernameErrorML, setUsernameErrorML] = useState("");
+  const [emailErrorML, setEmailErrorML] = useState("");
 
   const errorML = fetcherML.data?.error;
 
   const handleSubmitML = (eML) => {
     eML.preventDefault();
-    if (!usernameDraftML.trim() || !emailDraftML.trim()) return;
+
+    const usernameEmptyML = !usernameDraftML.trim();
+    const emailEmptyML = !emailDraftML.trim();
+
+    setUsernameErrorML(usernameEmptyML ? "Username is required" : "");
+    setEmailErrorML(emailEmptyML ? "Email is required" : "");
+
+    if (usernameEmptyML || emailEmptyML) return;
 
     fetcherML.submit(
       { intent: "register", username: usernameDraftML, accountEmail: emailDraftML },
@@ -428,25 +443,39 @@ function CreateAccountForm({ fetcher: fetcherML, saving: savingML }) {
     <div style={stylesML.outerCard}>
       <div style={stylesML.registerHeading}>Create Account</div>
 
-      <form onSubmit={handleSubmitML}>
+      <form onSubmit={handleSubmitML} noValidate>
         <div style={stylesML.registerBox}>
           <div style={stylesML.registerFieldGroup}>
             <span style={stylesML.registerLabel}>Username</span>
-            <div style={stylesML.registerInputBox}>
+            <div
+              style={{
+                ...stylesML.registerInputBox,
+                ...(usernameErrorML ? { border: "1px solid #C0392B" } : {}),
+              }}
+            >
               <PersonIcon />
               <input
                 style={stylesML.registerInput}
                 placeholder="Enter username"
                 value={usernameDraftML}
                 disabled={savingML}
-                onChange={(eML) => setUsernameDraftML(eML.target.value)}
+                onChange={(eML) => {
+                  setUsernameDraftML(eML.target.value);
+                  if (usernameErrorML) setUsernameErrorML("");
+                }}
               />
             </div>
+            {usernameErrorML && <p style={stylesML.registerFieldError}>{usernameErrorML}</p>}
           </div>
 
           <div style={stylesML.registerFieldGroup}>
             <span style={stylesML.registerLabel}>Email</span>
-            <div style={stylesML.registerInputBox}>
+            <div
+              style={{
+                ...stylesML.registerInputBox,
+                ...(emailErrorML ? { border: "1px solid #C0392B" } : {}),
+              }}
+            >
               <MailIcon />
               <input
                 style={stylesML.registerInput}
@@ -454,9 +483,13 @@ function CreateAccountForm({ fetcher: fetcherML, saving: savingML }) {
                 placeholder="Enter email"
                 value={emailDraftML}
                 disabled={savingML}
-                onChange={(eML) => setEmailDraftML(eML.target.value)}
+                onChange={(eML) => {
+                  setEmailDraftML(eML.target.value);
+                  if (emailErrorML) setEmailErrorML("");
+                }}
               />
             </div>
+            {emailErrorML && <p style={stylesML.registerFieldError}>{emailErrorML}</p>}
           </div>
 
           {errorML && <p style={stylesML.registerError}>{errorML}</p>}
