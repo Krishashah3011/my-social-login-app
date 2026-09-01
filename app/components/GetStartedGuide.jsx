@@ -7,9 +7,7 @@ const TEXT_BLACKML = "#000000";
 const TEXT_MUTEDML = "#616161";
 
 const InfoIconML = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <image href="/info-icon.png" x="9" y="5" width="7" height="14" />
-  </svg>
+  <img src="/info-icon.svg" width="24" height="24" alt="" />
 );
 
 const ChevronIconML = ({ openML }) => (
@@ -128,7 +126,6 @@ const stylesML = {
     lineHeight: "19px",
     color: TEXT_MUTEDML,
     margin: "0 0 14px",
-    maxWidth: "620px",
   },
   stepButton: {
     display: "inline-flex",
