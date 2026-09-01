@@ -1029,8 +1029,7 @@ function SmtpSettingsCard({ valuesML, onFieldChangeML }) {
 
         <div style={stylesML.subLabel}>
           Used to send the email login verification code to your customers. Enter your SMTP
-          provider's details below — once saved here, this app no longer reads SMTP credentials
-          from environment variables.
+          provider's details below.
         </div>
 
         <div style={stylesML.clientDivider} />
