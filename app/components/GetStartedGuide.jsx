@@ -61,7 +61,7 @@ const stylesML = {
     background: "#FFFFFF",
     border: `1px solid ${BORDERML}`,
     borderRadius: "12px",
-    padding: "20px",
+    padding: "13px 20px",
     marginBottom: "16px",
   },
   headerRow: {

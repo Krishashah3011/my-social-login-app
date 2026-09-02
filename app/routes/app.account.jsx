@@ -227,10 +227,11 @@ const stylesML = {
   },
   registerRow: {
     display: "flex",
+    flexDirection: "column",
     gap: "16px",
   },
   registerFieldGroup: {
-    flex: 1,
+    width: "100%",
     minWidth: 0,
     display: "flex",
     flexDirection: "column",
