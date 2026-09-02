@@ -141,10 +141,12 @@ const stylesML = {
   },
   row: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "16px",
   },
   fieldGroup: {
-    flex: 1,
+    flex: "1 1 220px",
+    minWidth: "220px",
     display: "flex",
     flexDirection: "column",
     gap: "4px",
@@ -682,7 +684,7 @@ export default function Account() {
               </div>
             </div>
 
-            <div style={{ flex: 1 }} />
+            <div style={{ flex: "1 1 220px", minWidth: "220px" }} />
           </div>
 
           <div style={stylesML.deleteWrap}>

@@ -4,6 +4,7 @@ import { authenticateAdminOnceML } from "../utils/authCache.server";
 import db from "../db.server";
 import TopIconNav from "../components/TopIconNav";
 import GetStartedGuide from "../components/GetStartedGuide";
+import { useEffect, useState } from "react";
 
 import {
   ResponsiveContainer,
@@ -313,6 +314,27 @@ const stylesML = {
   },
 };
 
+const MOBILE_BREAKPOINT_ML = 480;
+
+function useIsMobileML() {
+  const [isMobileML, setIsMobileML] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= MOBILE_BREAKPOINT_ML;
+  });
+
+  useEffect(() => {
+    const handleResizeML = () => {
+      setIsMobileML(window.innerWidth <= MOBILE_BREAKPOINT_ML);
+    };
+
+    handleResizeML();
+    window.addEventListener("resize", handleResizeML);
+    return () => window.removeEventListener("resize", handleResizeML);
+  }, []);
+
+  return isMobileML;
+}
+
 export default function Index() {
   const {
     steps: stepsML,
@@ -322,6 +344,8 @@ export default function Index() {
     identityProvidersDeepLink: identityProvidersDeepLinkML,
     registered: registeredML,
   } = useLoaderData();
+
+  const isMobileML = useIsMobileML();
 
   return (
     <s-page heading="Social Login App" inlineSize="950px">
@@ -355,9 +379,9 @@ export default function Index() {
               data={totalsByProviderML}
               margin={{
                 top: 10,
-                right: 20,
+                right: isMobileML ? 4 : 20,
                 left: 0,
-                bottom: 0,
+                bottom: isMobileML ? 24 : 0,
               }}
             >
               <CartesianGrid
@@ -368,8 +392,12 @@ export default function Index() {
 
               <XAxis
                 dataKey="name"
+                interval={0}
+                angle={isMobileML ? -35 : 0}
+                textAnchor={isMobileML ? "end" : "middle"}
+                height={isMobileML ? 45 : 30}
                 tick={{
-                  fontSize: 12,
+                  fontSize: isMobileML ? 10 : 12,
                   fill: "#424242",
                 }}
               />
@@ -444,7 +472,7 @@ export default function Index() {
 
               <Legend
                 wrapperStyle={{
-                  fontSize: "12px",
+                  fontSize: isMobileML ? "10px" : "12px",
                 }}
               />
 

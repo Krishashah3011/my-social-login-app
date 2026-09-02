@@ -369,8 +369,11 @@ const stylesML = {
   },
   headerRow: {
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
+    rowGap: "12px",
+    columnGap: "10px",
     marginBottom: "16px",
   },
   heading: {
@@ -502,6 +505,7 @@ const stylesML = {
   },
   tabBar: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "10px",
     padding: "8px",
     border: `1px solid ${BORDER_ML}`,
@@ -518,6 +522,7 @@ const stylesML = {
   },
   clientCardHeader: {
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: "10px",
   },
@@ -666,6 +671,7 @@ const stylesML = {
 
 function tabButtonStyleML(activeML) {
   return {
+    flex: "0 1 auto",
     padding: "10px 20px",
     borderRadius: "6px",
     border: "none",
@@ -673,6 +679,7 @@ function tabButtonStyleML(activeML) {
     fontWeight: 600,
     fontSize: "14px",
     cursor: "pointer",
+    whiteSpace: "nowrap",
     background: activeML ? BLUE_ML : "#ECECEC",
     color: activeML ? "#fff" : TEXT_DARK_ML,
   };
@@ -685,7 +692,8 @@ function saveWrapperStyleML() {
     justifyContent: "center",
     padding: "2px",
     borderRadius: "8px",
-    width: "136px",
+    flex: "0 1 136px",
+    minWidth: "120px",
     height: "42px",
     boxSizing: "border-box",
     background: "linear-gradient(180deg, #2A2A2A 0%, #000000 100%)",
@@ -697,7 +705,7 @@ function saveButtonStyleML(disabledML) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "132px",
+    width: "100%",
     height: "38px",
     boxSizing: "border-box",
     padding: "7px 10px",
@@ -1295,6 +1303,8 @@ function LoginPreviewModal({ values, settings, onClose }) {
           borderRadius: "8px",
           padding: "24px",
           width: "380px",
+          maxWidth: "90vw",
+          boxSizing: "border-box",
           textAlign: "center",
           position: "relative",
         }}
@@ -1559,7 +1569,7 @@ export default function Settings() {
           <div>
             <h1 style={stylesML.heading}>Configurations</h1>
           </div>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             <div style={saveWrapperStyleML()}>
               <button
                 style={saveButtonStyleML(false)}
