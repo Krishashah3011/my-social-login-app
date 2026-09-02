@@ -384,16 +384,12 @@ const stylesML = {
     color: TEXT_DARK_ML,
     margin: 0,
   },
-  subtitleRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    marginTop: "3px",
-  },
-  subtitleText: {
+  pageSubtitle: {
     fontFamily: "Inter",
-    fontSize: "12px",
-    color: TEXT_DARK_ML,
+    fontWeight: 400,
+    fontSize: "13px",
+    color: TEXT_MUTED_ML,
+    margin: "4px 0 0",
   },
   innerCard: {
     border: `1px solid ${BORDER_ML}`,
@@ -693,7 +689,7 @@ function saveWrapperStyleML() {
     padding: "2px",
     borderRadius: "8px",
     flex: "0 1 136px",
-    minWidth: "120px",
+    minWidth: "140px",
     height: "42px",
     boxSizing: "border-box",
     background: "linear-gradient(180deg, #2A2A2A 0%, #000000 100%)",
@@ -717,6 +713,7 @@ function saveButtonStyleML(disabledML) {
     fontWeight: 600,
     fontSize: "16px",
     lineHeight: "19px",
+    whiteSpace: "nowrap",
     cursor: disabledML ? "default" : "pointer",
   };
 }
@@ -1568,8 +1565,11 @@ export default function Settings() {
         <div style={stylesML.headerRow}>
           <div>
             <h1 style={stylesML.heading}>Configurations</h1>
+            <p style={stylesML.pageSubtitle}>
+              Configure your social login providers and customize how customers sign in to your store.
+            </p>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          <div style={{ display: "flex", flexWrap: "nowrap", gap: "10px" }}>
             <div style={saveWrapperStyleML()}>
               <button
                 style={saveButtonStyleML(false)}
